@@ -237,10 +237,11 @@ uint16_t aca_setpoint(uint16_t ui16_time_ticks_between_pas_interrupt, uint16_t s
 				ui8_temp += ui8_assist_dynamic_percent_addon;
 			}
 
-			if (ui16_time_ticks_between_pas_interrupt_smoothed > ui16_s_ramp_end && ui16_time_ticks_between_pas_interrupt_smoothed < ui16_s_ramp_start) { //ramp end usually 1500
+			if (ui16_time_ticks_between_pas_interrupt_smoothed > ui16_s_ramp_end) { //ramp end usually 1500
 				//if you are pedaling slower than defined ramp end
 				//but faster than ramp start
 				//current is proportional to cadence
+				if (ui16_time_ticks_between_pas_interrupt_smoothed < ui16_s_ramp_start) {
 					uint32_current_target = (ui8_temp * (ui16_battery_current_max_value) / 100);
 					float_temp = 1.0 - (((float)(ui16_time_ticks_between_pas_interrupt_smoothed - ui16_s_ramp_end)) / ((float)(ui16_s_ramp_start - ui16_s_ramp_end)));
 					uint32_current_target = ((uint16_t)(uint32_current_target) * (uint16_t)(float_temp * 100.0)) / 100 + ui16_current_cal_b;
@@ -248,8 +249,8 @@ uint16_t aca_setpoint(uint16_t ui16_time_ticks_between_pas_interrupt, uint16_t s
 
 					ui8_moving_indication |= (16);
 					ui8_cruiseThrottleSetting = 0;
-					
-				
+
+				}
 				//in you are pedaling faster than in ramp end defined, desired battery current level is set,
 			}
 			else {
@@ -260,7 +261,7 @@ uint16_t aca_setpoint(uint16_t ui16_time_ticks_between_pas_interrupt, uint16_t s
 				
 				ui8_moving_indication |= (16);
 			}
-		//}
+		//}	
 			/* else { // torque sensor mode
 
 			float_temp = (float) ui16_sum_torque;
@@ -284,7 +285,7 @@ uint16_t aca_setpoint(uint16_t ui16_time_ticks_between_pas_interrupt, uint16_t s
 		}*///CHANGED
 
 
-		float_temp = 0.0;
+		//float_temp = 0.0;
 		// throttle / torquesensor override following
 		/*if (((ui16_aca_flags & TQ_SENSOR_MODE) != TQ_SENSOR_MODE)) {
 			if (ui8_speedlimit_kph > 1){
@@ -313,7 +314,7 @@ uint16_t aca_setpoint(uint16_t ui16_time_ticks_between_pas_interrupt, uint16_t s
 		}*///CHANGED
 
 		uint16_temp = ((uint16_temp * ui16_battery_current_max_value) >> 8) + ui16_current_cal_b; //calculate current target
-
+		printf("Cur Target: %lu, Throttle: %u, temp: %u\r\n", uint32_current_target, ui16_momentary_throttle, uint16_temp);
 		//if throttle overpowers pas
 		if (uint16_temp > uint32_current_target) {
 			/*if (((ui16_aca_flags & TQ_SENSOR_MODE) == TQ_SENSOR_MODE)) {
@@ -355,7 +356,7 @@ uint16_t aca_setpoint(uint16_t ui16_time_ticks_between_pas_interrupt, uint16_t s
 		
 		
 		
-		if (ui8_assistlevel_global == 0) {
+		/*if (ui8_assistlevel_global == 0) {
 			uint32_current_target = ui16_current_cal_b;
 		}//*/
 
@@ -382,7 +383,7 @@ uint16_t aca_setpoint(uint16_t ui16_time_ticks_between_pas_interrupt, uint16_t s
 					uint32_current_target += ui16_current_cal_b;
 				}
 			}
-
+			
 			//send current target to PI-controller
 			ui32_dutycycle = PI_control(ui16_BatteryCurrent, uint32_current_target,uint_PWM_Enable);
 		}
