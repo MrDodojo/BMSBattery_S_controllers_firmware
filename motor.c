@@ -46,6 +46,7 @@ uint16_t ui16_ADC_iq_current_accumulated = 4096;
 uint16_t ui16_iq_current_ma = 0;
 
 uint8_t ui8_temp = 0;
+uint8_t ui8_allowMoreAdvance = 0;
 
 void TIM1_UPD_OVF_TRG_BRK_IRQHandler(void) __interrupt(TIM1_UPD_OVF_TRG_BRK_IRQHANDLER) {
 	adc_trigger();

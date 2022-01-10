@@ -142,10 +142,6 @@ extern uint8_t ui8_moving_indication;
 extern uint8_t ui8_cruiseThrottleSetting;
 extern uint8_t ui8_cruiseMinThrottle;
 
-extern uint8_t ui8_allowMoreAdvance;
-
-//extern uint8_t brakingBefore;
-//extern float motor_temp_temp;
 
 
 void controllerstate_init(void);

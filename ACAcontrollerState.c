@@ -144,11 +144,7 @@ uint8_t ui8_moving_indication = 0;
 uint8_t ui8_cruiseThrottleSetting = 0;
 uint8_t ui8_cruiseMinThrottle = 0;
 
-uint8_t ui8_allowMoreAdvance = 0;
 
-//uint8_t brakingBefore = 0;
-
-//float motor_temp_temp=0;
 
 
 void controllerstate_init(void) {
