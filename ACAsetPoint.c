@@ -314,7 +314,7 @@ uint16_t aca_setpoint(uint16_t ui16_time_ticks_between_pas_interrupt, uint16_t s
 		}*///CHANGED
 
 		uint16_temp = ((uint16_temp * ui16_battery_current_max_value) >> 8) + ui16_current_cal_b; //calculate current target
-		printf("Cur Target: %lu, Throttle: %u, temp: %u\r\n", uint32_current_target, ui16_momentary_throttle, uint16_temp);
+		//printf("Cur Target: %lu, Throttle: %u, temp: %u\r\n", uint32_current_target, ui16_momentary_throttle, uint16_temp);
 		//if throttle overpowers pas
 		if (uint16_temp > uint32_current_target) {
 			/*if (((ui16_aca_flags & TQ_SENSOR_MODE) == TQ_SENSOR_MODE)) {
