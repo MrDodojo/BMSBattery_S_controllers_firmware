@@ -45,6 +45,8 @@ int8_t hall_sensors_last = 0;
 uint16_t ui16_ADC_iq_current_accumulated = 4096;
 uint16_t ui16_iq_current_ma = 0;
 
+uint8_t ui8_temp = 0;
+
 void TIM1_UPD_OVF_TRG_BRK_IRQHandler(void) __interrupt(TIM1_UPD_OVF_TRG_BRK_IRQHANDLER) {
 	adc_trigger();
 	hall_sensors_read_and_action();
@@ -162,16 +164,18 @@ void updateCorrection() { //simple FOC is done here
 		return;
 	}
 	//Field weakening, q current is regulated to a minus value in field weakening mode instead of zero, resulting in higher speed
-	/*if (ui16_momentary_throttle > 191 && ui8_assistlevel_global == 5 && ui16_setpoint == 255 && ui16_motor_speed_erps > 110 && ui16_BatteryCurrent < 140+ui16_current_cal_b) {
+	if (ui16_momentary_throttle > 191 && ui16_setpoint == 255 && ui16_motor_speed_erps > 110 && ui16_BatteryCurrent < 140+ui16_current_cal_b) {
 		//ui8_allowMoreAdvance = 128;
-		if (((ui16_momentary_throttle - 192) >> 2) > ui8_allowMoreAdvance) {
+		ui8_temp = (ui16_momentary_throttle - 192); //or ui8_temp = (ui16_momentary_throttle - 192) >> 1;
+		//or ui8_temp = (ui16_momentary_throttle - 192) >> 2
+		if (ui8_temp > ui8_allowMoreAdvance) {
 			ui8_allowMoreAdvance++;
 		}
-		else if (((ui16_momentary_throttle - 192) >> 2) < ui8_allowMoreAdvance) {
+		else if (ui8_temp < ui8_allowMoreAdvance) {
 			ui8_allowMoreAdvance--;
 		}
 	}
-	else {
+	else if(ui8_allowMoreAdvance > 0) {
 		ui8_allowMoreAdvance--;
 	}//*/
 		
