@@ -52,7 +52,6 @@ uint8_t ui8_rx_buffer_counter = 0;
 uint8_t ui8_byte_received;
 
 uint8_t ui8_UARTCounter = 0;
-uint8_t ui8_cruiseHasBeenLow;
 
 volatile struc_lcd_configuration_variables lcd_configuration_variables;
 
@@ -262,14 +261,11 @@ void display_update() {
 			lcd_configuration_variables.ui8_c2 = (ui8_rx_buffer[6] & 0x37);
 			lcd_configuration_variables.ui8_c4 = (ui8_rx_buffer[8] & 0xE0) >> 5;*/
 
-			if (ui8_rx_buffer[8] == 0) {
-				ui8_cruiseHasBeenLow = 1;
-			}
-			if (lcd_configuration_variables.ui8_assist_level != (ui8_assistlevel_global & 15)) { //cruise disables when switching assist levels, just like stock
+			//i8_motor_temperature = ui8_rx_buffer[8];
+			if (lcd_configuration_variables.ui8_assist_level != ui8_assistlevel_global) {
 				ui8_cruiseThrottleSetting = 0;
 			}
-			else if (ui8_rx_buffer[8] == 16 && lcd_configuration_variables.ui8_assist_level != 0 && ui8_cruiseThrottleSetting == 0 && ui8_cruiseHasBeenLow == 1) {
-				ui8_cruiseHasBeenLow = 0;
+			else if (ui8_rx_buffer[8] == 0x10 && lcd_configuration_variables.ui8_assist_level != 0 && ui8_cruiseThrottleSetting == 0) {
 				ui8_cruiseThrottleSetting = ui16_sum_throttle;
 				ui8_cruiseMinThrottle = ui8_cruiseThrottleSetting;
 			}
