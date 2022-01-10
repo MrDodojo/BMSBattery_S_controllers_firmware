@@ -184,11 +184,14 @@ uint16_t aca_setpoint(uint16_t ui16_time_ticks_between_pas_interrupt, uint16_t s
 			//ui8_temp = map(ui16_sum_throttle >> 2, ui8_throttle_min_range, ui8_throttle_max_range, 0, 100); //map regen throttle to limits
 			//Current target based on linear input on pad X4
 		} else {*/
-			//ui8_temp = map(ui16_momentary_throttle, ui8_throttle_min_range, ui8_throttle_max_range, 0, 128); //map regen throttle to limits
+			//ui8_temp = map(ui16_momentary_throttle, ui8_throttle_min_range, 256, 0, 128); //map regen throttle to limits
 			controll_state_temp -= 2;
 		//}
 		//float_temp = (float) ui8_temp * (float) (ui16_regen_current_max_value) / 100.0;
+		
 			uint16_temp = (ui16_momentary_throttle * ui16_regen_current_max_value) >> 8;
+			//ui8_temp = map(ui16_momentary_throttle, ui8_throttle_min_range, ui8_throttle_max_range, 0, 128); //use throttle to vary regen when braking
+			//float_temp = ((ui8_temp * ui16_regen_current_max_value) >> 7);
 		//uint16_temp = ui8_temp * ui16_regen_current_max_value >> 7;
 
 		
@@ -208,7 +211,8 @@ uint16_t aca_setpoint(uint16_t ui16_time_ticks_between_pas_interrupt, uint16_t s
 		}
 
 		uint32_current_target = ui16_current_cal_b - uint16_temp;
-		
+		//uint32_current_target = (uint32_t)ui16_current_cal_b - float_temp;
+		//printf("mom throt: %u, regen max: %u, temp16: %u, target: %lu\r\n", ui16_momentary_throttle, ui16_regen_current_max_value, uint16_temp, uint32_current_target);
 		if (!checkOverVoltageOverride()){
 			ui32_dutycycle = PI_control(ui16_BatteryCurrent, uint32_current_target,uint_PWM_Enable);
 		}
