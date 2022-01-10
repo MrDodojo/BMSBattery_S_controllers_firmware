@@ -149,26 +149,48 @@ void hall_sensors_read_and_action(void) {
 	}
 }
 
-void updateCorrection() {
+void updateCorrection() { //simple FOC is done here
 
 	if (ui8_duty_cycle_target > 5) {
 		ui16_ADC_iq_current_accumulated -= ui16_ADC_iq_current_accumulated >> 3;
 		ui16_ADC_iq_current_accumulated += ui16_adc_read_phase_B_current();
-		ui16_ADC_iq_current = ui16_ADC_iq_current_accumulated >> 3; // this value is regualted to be zero by FOC 
+		ui16_ADC_iq_current = ui16_ADC_iq_current_accumulated >> 3; // this value is regulated to be zero by FOC 
 	}
 
 	if ((ui16_aca_flags & ANGLE_CORRECTION_ENABLED) != ANGLE_CORRECTION_ENABLED) {
 		ui8_position_correction_value = 127; //set advance angle to neutral value
 		return;
 	}
-
-	if (ui16_motor_speed_erps > 3 && ui16_BatteryCurrent > ui16_current_cal_b + 3) { //normal riding,
-		if (ui16_ADC_iq_current >> 2 > 128 && ui8_position_correction_value < 143) {
+	//Field weakening, q current is regulated to a minus value in field weakening mode instead of zero, resulting in higher speed
+	/*if (ui16_momentary_throttle > 191 && ui8_assistlevel_global == 5 && ui16_setpoint == 255 && ui16_motor_speed_erps > 110 && ui16_BatteryCurrent < 140+ui16_current_cal_b) {
+		//ui8_allowMoreAdvance = 128;
+		if (((ui16_momentary_throttle - 192) >> 2) > ui8_allowMoreAdvance) {
+			ui8_allowMoreAdvance++;
+		}
+		else if (((ui16_momentary_throttle - 192) >> 2) < ui8_allowMoreAdvance) {
+			ui8_allowMoreAdvance--;
+		}
+	}
+	else {
+		ui8_allowMoreAdvance--;
+	}//*/
+		
+	if (ui16_motor_speed_erps > 3 && ui16_BatteryCurrent > ui16_current_cal_b + 3) { //normal riding, //OFFSET OF CALB
+		if (ui16_ADC_iq_current > (513-ui8_allowMoreAdvance) && ui8_position_correction_value < 143) { //q current > 128 original
 			ui8_position_correction_value++;
-		} else if (ui16_ADC_iq_current >> 2 < 126 && ui8_position_correction_value > 111) {
+		}
+		else if (ui16_ADC_iq_current < (510-ui8_allowMoreAdvance) && ui8_position_correction_value > 111) { //q current > 126 original
 			ui8_position_correction_value--;
 		}
-	} else if (ui16_motor_speed_erps > 3 && ui16_BatteryCurrent < ui16_current_cal_b - 3) {//regen
+	}
+
+	/*if (ui16_motor_speed_erps > 3 && ui16_BatteryCurrent > ui16_current_cal_b + 3) { //normal riding, //OFFSET OF CALB
+		if (ui16_ADC_iq_current >> 2 > ui8_allowMoreAdvance && ui8_position_correction_value < 143) { //q current > 128 original
+			ui8_position_correction_value++;
+		} else if (ui16_ADC_iq_current >> 2 < (ui8_allowMoreAdvance-2) && ui8_position_correction_value > 111) { //q current > 126 original
+			ui8_position_correction_value--;
+		}
+	}*/ else if (ui16_motor_speed_erps > 3 && ui16_BatteryCurrent < ui16_current_cal_b - 3) {//regen
 		ui8_position_correction_value = 127; //set advance angle to neutral value
 	} else if (ui16_motor_speed_erps < 3) {
 		ui8_position_correction_value = 127; //reset advance angle at very low speed)
@@ -235,7 +257,7 @@ void motor_fast_loop(void) {
 			ui8_interpolation_start_position = ui8_motor_rotor_hall_position;
 			ui8_dynamic_motor_state = MOTOR_STATE_RUNNING_INTERPOLATION_60;
 		}
-
+		
 		ui16_PWM_cycles_counter_6++;
 	}else {// MOTOR_STATE_COAST || MOTOR_STATE_RUNNING_NO_INTERPOLATION
 		

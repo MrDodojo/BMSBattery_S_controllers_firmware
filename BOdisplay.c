@@ -159,7 +159,7 @@ void addConfigStateInfosB(void) {
 	addPayload(CODE_ASSIST_PERCENT_LEVEL_5, ui8_a_s_assistlevels[5]);
 
 	addPayload(CODE_MAX_REGEN_CURRENT, ui16_regen_current_max_value);
-	addPayload(CODE_ADC_BATTERY_VOLTAGE_CALIB, ui8_s_battery_voltage_calibration);
+	//addPayload(CODE_ADC_BATTERY_VOLTAGE_CALIB, ui8_s_battery_voltage_calibration);
 	addPayload(CODE_ADC_BATTERY_VOLTAGE_MIN, ui8_s_battery_voltage_min);
 	addPayload(CODE_ADC_BATTERY_VOLTAGE_MAX, ui8_s_battery_voltage_max);
 
@@ -350,13 +350,13 @@ void digestConfigRequest(uint8_t configAddress, uint8_t requestedCodeLowByte, ui
 			}
 			addPayload(requestedCodeLowByte, ui8_current_cal_a);
 			break;
-		case CODE_ADC_BATTERY_VOLTAGE_CALIB:
+		/*case CODE_ADC_BATTERY_VOLTAGE_CALIB:
 			ui8_s_battery_voltage_calibration = requestedValue;
 			if (configAddress == EEPROM_ADDRESS) {
 				eeprom_write(OFFSET_BATTERY_VOLTAGE_CALIB, requestedValue);
 			}
 			addPayload(requestedCodeLowByte, ui8_s_battery_voltage_calibration);
-			break;
+			break;*/
 		case CODE_ADC_BATTERY_VOLTAGE_MIN:
 			ui8_s_battery_voltage_min = requestedValue;
 			if (configAddress == EEPROM_ADDRESS) {

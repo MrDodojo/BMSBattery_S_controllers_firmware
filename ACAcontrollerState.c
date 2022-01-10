@@ -35,8 +35,9 @@ uint8_t ui8_speedlimit_actual_kph; // dynamic speedlimit based on current state
 float flt_s_pas_threshold = 1.7;
 float flt_s_pid_gain_p = 0.5;
 float flt_s_pid_gain_i = 0.2;
-float flt_s_motor_constant = 1.5;
+float flt_s_motor_constant = 1.75; //1.5 original
 float flt_torquesensorCalibration = 0.0;
+//float float_dc = 0;
 uint16_t ui16_s_ramp_end = 1500;
 uint16_t ui16_s_ramp_start = 7000;
 uint8_t ui8_s_motor_angle = 214;
@@ -47,7 +48,7 @@ uint8_t ui8_s_hall_angle3_180 = 127;
 uint8_t ui8_s_hall_angle1_240 = 170;
 uint8_t ui8_s_hall_angle5_300 = 212;
 
-uint8_t ui8_s_battery_voltage_calibration;
+//uint8_t ui8_s_battery_voltage_calibration;
 uint8_t ui8_s_battery_voltage_min;
 uint8_t ui8_s_battery_voltage_max;
 
@@ -61,7 +62,7 @@ uint8_t ui8_gear_ratio = 1;
 
 uint8_t ui8_a_s_assistlevels[6];
 uint8_t ui8_assist_dynamic_percent_addon = 0;
-uint8_t ui8_assistlevel_global = 66; // 2 + regen 4
+uint8_t ui8_assistlevel_global = 0; // 2 + regen 4
 uint8_t ui8_walk_assist = 0;
 uint8_t ui8_assist_percent_actual = 20;
 uint8_t ui8_assist_percent_wanted = 20;
@@ -84,7 +85,7 @@ uint16_t ui16_regen_current_max_value = 0;
 uint8_t ui8_possible_motor_state = 0;
 uint8_t ui8_dynamic_motor_state = 0;
 uint8_t ui8_BatteryVoltage = 0; //Battery Voltage read from ADC
-uint8_t ui8_battery_voltage_nominal =0;
+//uint8_t ui8_battery_voltage_nominal =0;
 uint16_t ui16_motor_speed_erps = 0;
 uint32_t ui32_erps_filtered = 0; //filtered value of erps
 uint16_t ui16_virtual_erps_speed = 0;
@@ -139,6 +140,17 @@ uint8_t ui8_PAS_Flag = 0;
 uint8_t light_stat = 0;
 uint8_t walk_stat = 0;
 
+uint8_t ui8_moving_indication = 0;
+uint8_t ui8_cruiseThrottleSetting = 0;
+uint8_t ui8_cruiseMinThrottle = 0;
+
+uint8_t ui8_allowMoreAdvance = 0;
+
+//uint8_t brakingBefore = 0;
+
+//float motor_temp_temp=0;
+
+
 void controllerstate_init(void) {
 	uint8_t di;
 	uint8_t eepromVal;
@@ -155,7 +167,9 @@ void controllerstate_init(void) {
 	ui8_a_s_assistlevels[5] =LEVEL_5;
 	ui16_aca_flags = ACA;
 	ui16_aca_experimental_flags = ACA_EXPERIMENTAL;
-	ui8_s_battery_voltage_calibration = ADC_BATTERY_VOLTAGE_K;
+	ui16_aca_experimental_flags |= 32;
+
+	//ui8_s_battery_voltage_calibration = ADC_BATTERY_VOLTAGE_K;
 	ui8_s_battery_voltage_min = BATTERY_VOLTAGE_MIN_VALUE;
 	ui8_s_battery_voltage_max = BATTERY_VOLTAGE_MAX_VALUE;
 	ui8_speedlimit_kph = limit;
@@ -268,14 +282,14 @@ void controllerstate_init(void) {
 	eepromVal = eeprom_read(OFFSET_ASSIST_PERCENT_LEVEL_5);
 	if (eepromVal > 0) ui8_a_s_assistlevels[5] = eepromVal;
 	
-	eepromVal = eeprom_read(OFFSET_BATTERY_VOLTAGE_CALIB);
-	if (eepromVal > 0) ui8_s_battery_voltage_calibration = eepromVal;
+	//eepromVal = eeprom_read(OFFSET_BATTERY_VOLTAGE_CALIB);
+	//if (eepromVal > 0) ui8_s_battery_voltage_calibration = eepromVal;
 	eepromVal = eeprom_read(OFFSET_BATTERY_VOLTAGE_MIN);
 	if (eepromVal > 0) ui8_s_battery_voltage_min = eepromVal;
 	eepromVal = eeprom_read(OFFSET_BATTERY_VOLTAGE_MAX);
 	if (eepromVal > 0) ui8_s_battery_voltage_max = eepromVal;
 	
-	ui8_battery_voltage_nominal = (((uint16_t)(ui8_s_battery_voltage_max-(ui8_s_battery_voltage_max-ui8_s_battery_voltage_min)/2))*ui8_s_battery_voltage_calibration)/256L;
+	//i8_battery_voltage_nominal = (((uint16_t)(ui8_s_battery_voltage_max-(ui8_s_battery_voltage_max-ui8_s_battery_voltage_min)/2))*ui8_s_battery_voltage_calibration)/256L;
 	
 	eepromVal = eeprom_read(OFFSET_MOTOR_CONSTANT);
 	if (eepromVal > 0) flt_s_motor_constant = int2float(eepromVal, 4.0);

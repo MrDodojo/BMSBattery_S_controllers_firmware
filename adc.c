@@ -76,7 +76,7 @@ void adc_init(void) {
     }
     
     ui16_current_cal_b >>= 4;
-    ui16_current_cal_b -= 1;
+    ui16_current_cal_b -= 3; //original -=1
     ui16_x4_cal_b >>= 4;
     ui16_x4_cal_b -= 1;
     ui16_throttle_cal_b >>= 4;

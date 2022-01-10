@@ -50,7 +50,7 @@ uint8_t ui16_error;
 uint8_t ui8_rx_buffer[13];
 uint8_t ui8_rx_buffer_counter = 0;
 uint8_t ui8_byte_received;
-uint8_t ui8_moving_indication = 0;
+
 uint8_t ui8_UARTCounter = 0;
 
 volatile struc_lcd_configuration_variables lcd_configuration_variables;
@@ -62,14 +62,16 @@ void display_init(){
 void send_message() {
 
 	// prepare moving indication info
-	ui8_moving_indication = 0;
-	if (brake_is_set()) {
+	//ui8_moving_indication = 0;
+	/*if (brake_is_set()) {
 		ui8_moving_indication |= (1 << 5);
 	}
 	//if (ebike_app_cruise_control_is_set ()) { ui8_moving_indication |= (1 << 3); }
-	//if (throttle_is_set ()) { ui8_moving_indication |= (1 << 1); }
-	//if (pas_is_set ()) { ui8_moving_indication |= (1 << 4); }
+	//if (ui16_momentary_throttle>0) { ui8_moving_indication |= (1 << 1); }
 
+	if(throttleIsSet) { ui8_moving_indication |= (1 << 1); }
+	if (pasIsSet) { ui8_moving_indication |= (1 << 4); }
+	*/
 
 	if (((ui16_aca_flags & EXTERNAL_SPEED_SENSOR) == EXTERNAL_SPEED_SENSOR)) {
 		if (ui16_time_ticks_between_speed_interrupt > 65000) {
@@ -86,31 +88,47 @@ void send_message() {
 	}
 
 	// calc battery pack state of charge (SOC)
-	ui16_battery_bars_calc = ui8_adc_read_battery_voltage() - ui8_s_battery_voltage_min;
-	ui16_battery_bars_calc<<=8;
-	ui16_battery_bars_calc /=(ui8_s_battery_voltage_max-ui8_s_battery_voltage_min);
-	
-	if (ui16_battery_bars_calc > 200) {
-		ui8_battery_soc = 16;
-	}// 4 bars | full
-	else if (ui16_battery_bars_calc > 150) {
-		ui8_battery_soc = 12;
-	}// 3 bars
-	else if (ui16_battery_bars_calc > 100) {
-		ui8_battery_soc = 8;
-	}// 2 bars
-	else if (ui16_battery_bars_calc > 50) {
-		ui8_battery_soc = 4;
-	}// 1 bar
+	ui16_battery_bars_calc = ui8_adc_read_battery_voltage();
+	if (ui16_battery_bars_calc <= ui8_s_battery_voltage_min) {
+		ui8_battery_soc = 1;
+	}
 	else {
-		ui8_battery_soc = 3;
-	} // empty
+		ui16_battery_bars_calc -= ui8_s_battery_voltage_min;
+		
+		ui16_battery_bars_calc <<= 8;
+		ui16_battery_bars_calc /= (ui8_s_battery_voltage_max - ui8_s_battery_voltage_min);
 
+		//43	85	128	171	213	256
+
+		//0	43	79	127	158	198
+
+
+		if (ui16_battery_bars_calc > 198) {
+			ui8_battery_soc = 16;
+		}// 4 bars | full
+		else if (ui16_battery_bars_calc > 158) {
+			ui8_battery_soc = 12;
+		}// 3 bars
+		else if (ui16_battery_bars_calc > 127) {
+			ui8_battery_soc = 8;
+		}// 2 bars
+		else if (ui16_battery_bars_calc > 79) {
+			ui8_battery_soc = 4;
+		}// 1 bar
+		else if (ui16_battery_bars_calc > 43) {
+			ui8_battery_soc = 3;
+		}// 1 bar
+		else {
+			ui8_battery_soc = 0;
+		} // empty
+	}
 	ui8_tx_buffer [0] = 65;
 	// B1: battery level
 	ui8_tx_buffer [1] = ui8_battery_soc;
+	//printf("ToLCD: %u ui8_battery_soc)
 	// B2: 24V controller
-	ui8_tx_buffer [2] = ui8_battery_voltage_nominal;
+	//ui8_tx_buffer [2] = ui8_battery_voltage_nominal;
+	ui8_tx_buffer[2] = 0;
 	// B3: speed, wheel rotation period, ms; period(ms)=B3*256+B4;
 	ui8_tx_buffer [3] = (ui16_wheel_period_ms >> 8) & 0xff;
 	ui8_tx_buffer [4] = ui16_wheel_period_ms & 0xff;
@@ -137,13 +155,21 @@ void send_message() {
 	// - B8 = 100, LCD shows 750 watts
 	// each unit of B8 = 0.25A
 
-
-	ui8_tx_buffer [8] = (uint8_t) ((((ui16_BatteryCurrent - ui16_current_cal_b + 1) << 2)*10) / ui8_current_cal_a);
+	if (ui16_BatteryCurrent <= ui16_current_cal_b+4) {
+		ui8_tx_buffer[8] = 0;
+	}
+	else {
+	
+		ui8_tx_buffer[8] = (uint8_t)((((ui16_BatteryCurrent - ui16_current_cal_b-3) << 2) * 10) / ui8_current_cal_a);
+		//ui8_tx_buffer[8] = 0;
+	}
+	
+	//ui8_tx_buffer[8] = (uint8_t)((((ui16_BatteryCurrent - ui16_current_cal_b) << 2+1) * 10) / ui8_current_cal_a);//orignally was +1
 	// B9: motor temperature
 	ui8_tx_buffer [9] = i8_motor_temperature - 15; //according to documentation at endless sphere
 	// B10 and B11: 0
-	ui8_tx_buffer [10] = 0;
-	ui8_tx_buffer [11] = 0;
+	ui8_tx_buffer [10] = 128;
+	ui8_tx_buffer [11] = 33;
 
 	// calculate CRC xor
 	ui8_crc = 0;
@@ -155,7 +181,7 @@ void send_message() {
 	// send the package over UART
 	for (ui8_j = 0; ui8_j <= 11; ui8_j++) {
 		uart_put_buffered(ui8_tx_buffer [ui8_j]);
-	}
+	}//*/
 }
 
 /********************************************************************************************/
@@ -164,7 +190,8 @@ void send_message() {
 
 void digestLcdValues(void) {
 
-	ui8_assistlevel_global = lcd_configuration_variables.ui8_assist_level + 80; // always add max regen 
+	//ui8_assistlevel_global = lcd_configuration_variables.ui8_assist_level + 80; // always add max regen
+	ui8_assistlevel_global = lcd_configuration_variables.ui8_assist_level;
 	ui8_walk_assist = lcd_configuration_variables.ui8_WalkModus_On;
 	// added by DerBastler Light On/Off
 	light_stat = (light_stat&~128) | lcd_configuration_variables.ui8_light_On; // only update 7th bit, 1st bit is current status
@@ -184,6 +211,7 @@ void display_update() {
 	
 	// Check for reception of complete message
 	if ((ui8_UARTCounter > 12) || (ui8_rx_buffer[ui8_UARTCounter - 1] == 0x0E)) {
+		
 		ui8_UARTCounter = 0;
 
 		// validation of the package data
@@ -194,8 +222,9 @@ void display_update() {
 			ui8_crc ^= ui8_rx_buffer[ui8_j];
 		}
 
+		//printf("CRC: before: %u, received: %u, after: %u\r\n",ui8_crc,ui8_rx_buffer[5], (ui8_crc ^ 23));
 		// see if CRC is ok
-		if (((ui8_crc ^ 10) == ui8_rx_buffer [5]) || // some versions of CRC LCD5 (??)
+		if (/*((ui8_crc ^ 10) == ui8_rx_buffer [5]) || // some versions of CRC LCD5 (??)
 				((ui8_crc ^ 1) == ui8_rx_buffer [5]) || // CRC LCD3 (tested with KT36/48SVPR, from PSWpower)
 				((ui8_crc ^ 2) == ui8_rx_buffer [5]) || // CRC LCD5
 				((ui8_crc ^ 3) == ui8_rx_buffer [5]) || // CRC LCD5 Added display 5 Romanta
@@ -205,21 +234,24 @@ void display_update() {
 		    		((ui8_crc ^ 7) == ui8_rx_buffer [5]) ||
 		    		((ui8_crc ^ 8) == ui8_rx_buffer [5]) ||
 		    		((ui8_crc ^ 14) == ui8_rx_buffer [5]) ||
-				((ui8_crc ^ 9) == ui8_rx_buffer [5])) // CRC LCD3
+				((ui8_crc ^ 9) == ui8_rx_buffer [5]) || // CRC LCD3*/
+				((ui8_crc ^ 23) == ui8_rx_buffer[5])) // CRC LCD8
 		{
+			
 			// added by DerBastler Light On/Off 
 			lcd_configuration_variables.ui8_light_On = ui8_rx_buffer [1] & 128;
 			
 			lcd_configuration_variables.ui8_assist_level = ui8_rx_buffer [1] & 7;
 			
 			// walk assist, see https://endless-sphere.com/forums/viewtopic.php?f=2&t=73471&p=1324745&hilit=kunteng+protocol+hacked#p1109048 
+			
 			if(lcd_configuration_variables.ui8_assist_level == 6)lcd_configuration_variables.ui8_WalkModus_On = 1;
 			else lcd_configuration_variables.ui8_WalkModus_On = 0;
 			
 			lcd_configuration_variables.ui8_max_speed = 10 + ((ui8_rx_buffer [2] & 248) >> 3) | (ui8_rx_buffer [4] & 32);
 			lcd_configuration_variables.ui8_wheel_size = ((ui8_rx_buffer [4] & 192) >> 6) | ((ui8_rx_buffer [2] & 7) << 2);
 
-			lcd_configuration_variables.ui8_p1 = ui8_rx_buffer[3];
+			/*lcd_configuration_variables.ui8_p1 = ui8_rx_buffer[3];
 			lcd_configuration_variables.ui8_p2 = ui8_rx_buffer[4] & 0x07;
 			lcd_configuration_variables.ui8_p3 = ui8_rx_buffer[4] & 0x08;
 			lcd_configuration_variables.ui8_p4 = ui8_rx_buffer[4] & 0x10;
@@ -227,13 +259,24 @@ void display_update() {
 
 			lcd_configuration_variables.ui8_c1 = (ui8_rx_buffer[6] & 0x38) >> 3;
 			lcd_configuration_variables.ui8_c2 = (ui8_rx_buffer[6] & 0x37);
-			lcd_configuration_variables.ui8_c4 = (ui8_rx_buffer[8] & 0xE0) >> 5;
-			lcd_configuration_variables.ui8_c5 = (ui8_rx_buffer[7] & 0x0F);
+			lcd_configuration_variables.ui8_c4 = (ui8_rx_buffer[8] & 0xE0) >> 5;*/
+
+			//i8_motor_temperature = ui8_rx_buffer[8];
+			if (lcd_configuration_variables.ui8_assist_level != ui8_assistlevel_global) {
+				ui8_cruiseThrottleSetting = 0;
+			}
+			else if (ui8_rx_buffer[8] == 0x10 && lcd_configuration_variables.ui8_assist_level != 0 && ui8_cruiseThrottleSetting == 0) {
+				ui8_cruiseThrottleSetting = ui16_sum_throttle;
+				ui8_cruiseMinThrottle = ui8_cruiseThrottleSetting;
+			}
+			
+			/*lcd_configuration_variables.ui8_c5 = (ui8_rx_buffer[7] & 0x0F);
 			lcd_configuration_variables.ui8_c12 = (ui8_rx_buffer[9] & 0x0F);
 			lcd_configuration_variables.ui8_c13 = (ui8_rx_buffer[10] & 0x1C) >> 2;
-			lcd_configuration_variables.ui8_c14 = (ui8_rx_buffer[7] & 0x60) >> 5;
+			lcd_configuration_variables.ui8_c14 = (ui8_rx_buffer[7] & 0x60) >> 5;*/
 
 			digestLcdValues();
+			
 			send_message();
 		}
 	}

@@ -458,7 +458,9 @@ void kingmeter_update(void) {
 		//do something else
 #endif
 	} else {
-		ui8_assistlevel_global = KM.Rx.AssistLevel + 80; // always add max regen 
+		//ui8_assistlevel_global = KM.Rx.AssistLevel + 80; // always add max regen 
+		ui8_assistlevel_global = KM.Rx.AssistLevel; // always add max regen 
+
 	}
 
 

@@ -60,7 +60,7 @@ B7: parameter C5 and C7
 b7b6b5b4 b3b2b1b0
 . . . .  c3c2c1c0      param C5 (mask 0x0F)
 . c1c0.  . . . .       param C14 (mask 0x60)
-B8: parameter C4
+B8: parameter C4       on LCD8H B8==0x10,16 when cruise control going to be enabled
 b7b6b5b4 b3b2b1b0
 c2c1c0.  . . . .       param C4  (mask 0xE0)
 B9: parameter C12

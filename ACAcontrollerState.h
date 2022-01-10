@@ -54,7 +54,7 @@ extern uint16_t ui16_regen_current_max_value;
 extern uint8_t ui8_possible_motor_state;
 extern uint8_t ui8_dynamic_motor_state;
 extern uint8_t ui8_BatteryVoltage;
-extern uint8_t ui8_battery_voltage_nominal;
+//extern uint8_t ui8_battery_voltage_nominal;
 extern uint16_t ui16_motor_speed_erps;
 extern uint16_t ui16_virtual_erps_speed;
 extern uint32_t ui32_erps_filtered; //filtered value of erps
@@ -106,7 +106,7 @@ extern uint16_t ui16_torque[NUMBER_OF_PAS_MAGS];
 extern uint8_t ui8_torque_index;
 
 extern uint16_t ui16_time_ticks_between_pas_interrupt_smoothed; // for filtering of PAS value
-extern float flt_current_PAS_fraction;
+//extern float flt_current_PAS_fraction;
 extern uint16_t ui16_time_ticks_between_pas_interrupt;
 extern uint16_t ui16_PAS_High;
 extern uint16_t ui16_time_ticks_for_pas_calculation; //Counter for cadence
@@ -120,6 +120,7 @@ extern float flt_s_pas_threshold;
 extern float flt_s_pid_gain_p;
 extern float flt_s_pid_gain_i;
 extern float flt_s_motor_constant;
+//extern float float_dc;
 extern uint16_t ui16_s_ramp_end;
 extern uint16_t ui16_s_ramp_start;
 extern uint8_t ui8_s_motor_angle;
@@ -130,12 +131,22 @@ extern uint8_t ui8_s_hall_angle3_180;
 extern uint8_t ui8_s_hall_angle1_240;
 extern uint8_t ui8_s_hall_angle5_300;
 
-extern uint8_t ui8_s_battery_voltage_calibration;
+//extern uint8_t ui8_s_battery_voltage_calibration;
 extern uint8_t ui8_s_battery_voltage_min;
 extern uint8_t ui8_s_battery_voltage_max;
 
 extern uint8_t light_stat;
 extern uint8_t walk_stat;
+
+extern uint8_t ui8_moving_indication;
+extern uint8_t ui8_cruiseThrottleSetting;
+extern uint8_t ui8_cruiseMinThrottle;
+
+extern uint8_t ui8_allowMoreAdvance;
+
+//extern uint8_t brakingBefore;
+//extern float motor_temp_temp;
+
 
 void controllerstate_init(void);
 
