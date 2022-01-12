@@ -109,8 +109,7 @@ uint16_t aca_setpoint(uint16_t ui16_time_ticks_between_pas_interrupt, uint16_t s
 
 	// first select current speed limit
 	if (ui8_offroad_state == 255) {
-		ui8_speedlimit_actual_kph = 80;
-		
+		ui8_speedlimit_actual_kph = 80;		
 	} /*else if (ui8_offroad_state > 15 && ui16_sum_throttle <= 2) { // allow a slight increase based on ui8_offroad_state
 		ui8_speedlimit_actual_kph = ui8_speedlimit_kph + (ui8_offroad_state - 16);
 	} else if (ui8_offroad_state > 15 && ui16_sum_throttle > 2) {
