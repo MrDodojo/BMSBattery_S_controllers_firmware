@@ -96,7 +96,7 @@ void UART2_IRQHandler(void) __interrupt(UART2_IRQHANDLER);
 int main(void) {
 	//set clock at the max 16MHz
 	CLK_HSIPrescalerConfig(CLK_PRESCALER_HSIDIV1);
-	ui8_offroad_state = 255;
+	//ui8_offroad_state = 255;
 	//printf("Startup!\r\n");
 
 	gpio_init();
@@ -104,8 +104,8 @@ int main(void) {
 	while (brake_is_set()); // hold here while brake is pressed -- this is a protection for development
 	debug_pin_init();
 	light_pin_init();
-	//light_pin_reset();
-	light_pin_set();
+	light_pin_reset();
+	//light_pin_set();
 	timer2_init();
 	uart_init();
 	eeprom_init();
@@ -180,7 +180,7 @@ int main(void) {
 
 			//pwm_set_duty_cycle ((uint8_t)ui16_sum_throttle);
 
-
+			
 			
 			
 			/****************************************************************************/

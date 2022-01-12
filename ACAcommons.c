@@ -72,10 +72,10 @@ uint32_t PI_control(uint16_t pv, uint16_t setpoint, uint8_t uint_PWM_Enable) {
 		float_i = ui32_erps_filtered * flt_s_motor_constant - float_p;
 	}
 	
-	if (float_p + float_i > float_dc + 5) {
-		float_dc += 5;		
-	} else if (float_p + float_i < float_dc - 5) {
-		float_dc -= 5;
+	if (float_p + float_i > float_dc + 10) {
+		float_dc += 10;		
+	} else if (float_p + float_i < float_dc - 14) {
+		float_dc -= 14;
 	} else {
 		float_dc = float_p + float_i;
 	}
@@ -389,6 +389,12 @@ void updateSlowLoopStates(void) {
 		if (ui8_offroad_counter > 150) {
 			ui8_offroad_state = 255;
 			ui8_offroad_counter = 0;
+			ui16_battery_current_max_value = 206;
+			ui8_a_s_assistlevels[1] = 4;
+			ui8_a_s_assistlevels[2] = 7;
+			ui8_a_s_assistlevels[3] = 13;
+			ui8_a_s_assistlevels[4] = 26;
+			ui8_a_s_assistlevels[5] = 50;
 		}
 	}
 

@@ -110,17 +110,17 @@ uint16_t aca_setpoint(uint16_t ui16_time_ticks_between_pas_interrupt, uint16_t s
 	// first select current speed limit
 	if (ui8_offroad_state == 255) {
 		ui8_speedlimit_actual_kph = 80;
-		ui16_battery_current_max_value = 206;
+		
 	} /*else if (ui8_offroad_state > 15 && ui16_sum_throttle <= 2) { // allow a slight increase based on ui8_offroad_state
 		ui8_speedlimit_actual_kph = ui8_speedlimit_kph + (ui8_offroad_state - 16);
 	} else if (ui8_offroad_state > 15 && ui16_sum_throttle > 2) {
 		ui8_speedlimit_actual_kph = ui8_speedlimit_with_throttle_override_kph + (ui8_offroad_state - 16);
 	} //*/else if (ui16_time_ticks_for_pas_calculation > timeout || !PAS_is_active) {
 		ui8_speedlimit_actual_kph = ui8_speedlimit_without_pas_kph;
-		ui16_battery_current_max_value = 17; //52.06292683 V = 193 adc value, -> 250/52.06292683=x. x*3.44 = 
+		//ui16_battery_current_max_value = 20; //52.06292683 V = 193 adc value, -> 250/52.06292683=x. x*3.44 = 
 	} else {
 		ui8_speedlimit_actual_kph = ui8_speedlimit_kph;
-		ui16_battery_current_max_value = 17;
+		//ui16_battery_current_max_value = 20;
 	}
 
 	// >=8 means levels are switched of, use wanted percentage directly instead
@@ -190,6 +190,7 @@ uint16_t aca_setpoint(uint16_t ui16_time_ticks_between_pas_interrupt, uint16_t s
 		//float_temp = (float) ui8_temp * (float) (ui16_regen_current_max_value) / 100.0;
 		
 			uint16_temp = (ui16_momentary_throttle * ui16_regen_current_max_value) >> 8;
+			//i8_motor_temperature = uint16_temp;
 			//ui8_temp = map(ui16_momentary_throttle, ui8_throttle_min_range, ui8_throttle_max_range, 0, 128); //use throttle to vary regen when braking
 			//float_temp = ((ui8_temp * ui16_regen_current_max_value) >> 7);
 		//uint16_temp = ui8_temp * ui16_regen_current_max_value >> 7;
@@ -222,7 +223,7 @@ uint16_t aca_setpoint(uint16_t ui16_time_ticks_between_pas_interrupt, uint16_t s
 			ui32_dutycycle = ui16_virtual_erps_speed * 2;
 			controll_state_temp -= 8;
 		}
-		
+		//printf("duty, %u, erps, %u, current, %u\r\n", ui16_setpoint, ui16_motor_speed_erps, ui16_BatteryCurrent);
 	} else {
 		
 		
@@ -360,7 +361,7 @@ uint16_t aca_setpoint(uint16_t ui16_time_ticks_between_pas_interrupt, uint16_t s
 		
 		
 		
-		/*if (ui8_assistlevel_global == 0) {
+		if (ui8_assistlevel_global == 0) {
 			uint32_current_target = ui16_current_cal_b;
 		}//*/
 
@@ -370,7 +371,7 @@ uint16_t aca_setpoint(uint16_t ui16_time_ticks_between_pas_interrupt, uint16_t s
 		}else if (!checkUnderVoltageOverride() && !checkMaxErpsOverride()){
 
 			if (ui8_walk_assist) {
-				uint32_current_target = 5 + ui16_current_cal_b;
+				uint32_current_target = 15 + ui16_current_cal_b;
 				uint32_current_target = CheckSpeed((uint16_t)uint32_current_target, (uint16_t)ui16_virtual_erps_speed, (ui16_speed_kph_to_erps_ratio * ((uint16_t)3)) / 100, (ui16_speed_kph_to_erps_ratio * ((uint16_t)(5))) / 100); //limit speed
 			}
 
