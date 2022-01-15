@@ -72,10 +72,10 @@ uint32_t PI_control(uint16_t pv, uint16_t setpoint, uint8_t uint_PWM_Enable) {
 		float_i = ui32_erps_filtered * flt_s_motor_constant - float_p;
 	}
 	
-	if (float_p + float_i > float_dc + 10) {
-		float_dc += 10;		
-	} else if (float_p + float_i < float_dc - 14) {
-		float_dc -= 14;
+	if (float_p + float_i > float_dc + 8) {
+		float_dc += 8;		
+	} else if (float_p + float_i < float_dc - 16) {
+		float_dc -= 16;
 	} else {
 		float_dc = float_p + float_i;
 	}
@@ -336,7 +336,7 @@ void updateSlowLoopStates(void) {
 		return;
 	}
 
-	if (ui8_offroad_state == 0 && !GPIO_ReadInputPin(BRAKE__PORT, BRAKE__PIN)) {//first step, brake on.
+	if (ui8_assistlevel_global == 1 && ui8_offroad_state == 0 && !GPIO_ReadInputPin(BRAKE__PORT, BRAKE__PIN)) {//first step, brake on.
 		ui8_offroad_state = 1;
 	} else if (ui8_offroad_state == 1) {//second step, make sure the brake is hold according to definded time
 		ui8_offroad_counter++;
@@ -389,7 +389,7 @@ void updateSlowLoopStates(void) {
 		if (ui8_offroad_counter > 150) {
 			ui8_offroad_state = 255;
 			ui8_offroad_counter = 0;
-			ui16_battery_current_max_value = 206;
+			ui16_battery_current_max_value = 200;
 			ui8_a_s_assistlevels[1] = 4;
 			ui8_a_s_assistlevels[2] = 7;
 			ui8_a_s_assistlevels[3] = 13;

@@ -46,9 +46,9 @@
 #define ANGLE_5_300 213
 #define TQS_CALIB 0.0
 #define ACA 5762
-#define EEPROM_INIT_MAGIC_BYTE 127 // makes sure (chance of fail 1/255) eeprom is invalidated after flashing new config
+#define EEPROM_INIT_MAGIC_BYTE 236 // makes sure (chance of fail 1/255) eeprom is invalidated after flashing new config
 #define ADC_BATTERY_VOLTAGE_K 69
-#define ACA_EXPERIMENTAL 128
+#define ACA_EXPERIMENTAL 1152
 #define BATTERY_VOLTAGE_MAX_VALUE 219
 
 #endif /* CONFIG_H_ */

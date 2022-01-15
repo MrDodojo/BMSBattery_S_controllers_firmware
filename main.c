@@ -44,7 +44,7 @@ uint8_t ui8_ultraslowloop_counter = 0;
 //uint16_t ui16_log2 = 0;
 //uint8_t ui8_log = 0;
 //uint8_t ui8_i = 0; //counter for ... next loop
-
+int16_t i16_temperature_accumulated = 0;
 
 
 //float float_kv = 0;
@@ -196,11 +196,16 @@ int main(void) {
 				ui8_ultraslowloop_counter++;
 				if (ui8_ultraslowloop_counter >= 10) {
 					ui8_ultraslowloop_counter = 0;
-					ui8_uptime++;
+					if (ui8_uptime < 255) {
+						ui8_uptime++;
+					}
 					//printf("Throttle: %u, cur target: %lu, setpoint: %u, offroad: %u\r\n", ui16_momentary_throttle, uint32_current_target, ui16_setpoint, ui8_offroad_state);
 					updateX4();
 					i8_motor_temperature = (ui16_x4_value - 105) >> 1;
-					i8_motor_temperature += (int8_t)(ui16_BatteryCurrent - ui16_current_cal_b - 2) / 9;
+					i8_motor_temperature += (int8_t)(ui16_BatteryCurrent - ui16_current_cal_b - 2) / 5;
+					i16_temperature_accumulated -= i16_temperature_accumulated >> 3;
+					i16_temperature_accumulated += i8_motor_temperature;
+					i8_motor_temperature = i16_temperature_accumulated >> 3;
 					
 					//printf("X4: %u, temp: %d, calB: %u, current: %u\r\n", ui16_x4_value, i8_motor_temperature, ui16_current_cal_b, ui16_BatteryCurrent);
 				}

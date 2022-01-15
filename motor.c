@@ -166,8 +166,8 @@ void updateCorrection() { //simple FOC is done here
 	}
 	//Field weakening, q current is regulated to a minus value in field weakening mode instead of zero, resulting in higher speed
 	//if (ui16_momentary_throttle > 191 && ui16_setpoint == 255 && ui16_motor_speed_erps > 110 && ui16_BatteryCurrent < (140+ui16_current_cal_b)) {
-	if (ui8_assistlevel_global == 5 && ui16_momentary_throttle > 191 && ui16_setpoint == 255 && ui16_motor_speed_erps > 110 && ui16_BatteryCurrent < (140+ui16_current_cal_b)) {
-		ui8_temp = (ui16_momentary_throttle - 192); //or ui8_temp = (ui16_momentary_throttle - 192) >> 1;
+	if (ui8_assistlevel_global == 5 && ui16_momentary_throttle > 191 && ui16_setpoint == 255 && ui16_motor_speed_erps > 110 && ui16_BatteryCurrent < (150+ui16_current_cal_b)) {
+		ui8_temp = (ui16_momentary_throttle - 192) << 1; //or ui8_temp = (ui16_momentary_throttle - 192) >> 1;
 		//or ui8_temp = (ui16_momentary_throttle - 192) >> 2
 		if (ui8_temp > ui8_allowMoreAdvance) {
 			ui8_allowMoreAdvance++;

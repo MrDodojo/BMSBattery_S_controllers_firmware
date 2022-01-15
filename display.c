@@ -165,9 +165,9 @@ void send_message() {
 		//i16_temp += 2;
 		ui8_tx_buffer[8] = (((-i16_temp) << 2) * 10) / ui8_current_cal_a;
 	}
-	else if(i16_temp > 2) {
+	else if(i16_temp > 5) {
 		//i16_temp -= 2;
-		ui8_tx_buffer[8] = (((i16_temp-1) << 2) * 10) / ui8_current_cal_a;
+		ui8_tx_buffer[8] = (((i16_temp-2) << 2) * 10) / ui8_current_cal_a;
 	} else {
 		ui8_tx_buffer[8] = 0;
 	}

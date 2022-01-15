@@ -367,7 +367,7 @@ uint16_t aca_setpoint(uint16_t ui16_time_ticks_between_pas_interrupt, uint16_t s
 		if ((ui16_aca_experimental_flags & DC_STATIC_ZERO) == DC_STATIC_ZERO) {
 			ui32_dutycycle = 0;
 			controll_state_temp += 256;
-		}else if (!checkUnderVoltageOverride() && !checkMaxErpsOverride()){
+		}else if (!checkUnderVoltageOverride() && !checkMaxErpsOverride()) {
 
 			if (ui8_walk_assist) {
 				uint32_current_target = 15 + ui16_current_cal_b;
@@ -398,12 +398,12 @@ uint16_t aca_setpoint(uint16_t ui16_time_ticks_between_pas_interrupt, uint16_t s
 	if ((ui16_aca_experimental_flags & PWM_AUTO_OFF) == PWM_AUTO_OFF) {
 		controll_state_temp += 512;
 		//disable PWM if enabled and no power is wanted
-		if (uint_PWM_Enable && ui32_erps_filtered == 0 && uint32_current_target == ui16_current_cal_b) {
+		if (uint_PWM_Enable && ui32_erps_filtered == 0 && uint32_current_target == ui16_current_cal_b || ui8_BatteryVoltage < (ui8_s_battery_voltage_min-2)) {
 			TIM1_CtrlPWMOutputs(DISABLE);
 			uint_PWM_Enable = 0;
 		}
 		//enable PWM if disabled and voltage is 6.25% higher than min, some hysteresis and power is wanted
-		if (!uint_PWM_Enable && ui8_BatteryVoltage > (ui8_s_battery_voltage_min + (ui8_s_battery_voltage_min >> 4)) && (uint32_current_target != ui16_current_cal_b)) {
+		if (ui8_uptime >= 1 && !uint_PWM_Enable && ui8_BatteryVoltage > (ui8_s_battery_voltage_min + (ui8_s_battery_voltage_min >> 4)) && (uint32_current_target != ui16_current_cal_b)) {
 			TIM1_CtrlPWMOutputs(ENABLE);
 			uint_PWM_Enable = 1;
 		}
