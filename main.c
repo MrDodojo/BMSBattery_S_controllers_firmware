@@ -192,7 +192,7 @@ int main(void) {
 
 
 				
-				//printf("X4: %u, Case: %u, Temp: %d, Temptemp: %lu\r\n", ui16_x4_value, ui8_ultraslowloop_counter, i8_motor_temperature, (uint32_t)(motor_temp_temp*10.0));
+				//printf("X4: %u, Case: %u, Temp: %d, Temptemp: %lu\r\n", ui16_x4_value, ui8_ultraslowloop_counter, i16_motor_temperature, (uint32_t)(motor_temp_temp*10.0));
 				ui8_ultraslowloop_counter++;
 				if (ui8_ultraslowloop_counter >= 10) {
 					ui8_ultraslowloop_counter = 0;
@@ -201,13 +201,15 @@ int main(void) {
 					}
 					//printf("Throttle: %u, cur target: %lu, setpoint: %u, offroad: %u\r\n", ui16_momentary_throttle, uint32_current_target, ui16_setpoint, ui8_offroad_state);
 					updateX4();
-					i8_motor_temperature = (ui16_x4_value - 105) >> 1;
-					i8_motor_temperature += (int8_t)(ui16_BatteryCurrent - ui16_current_cal_b - 2) / 5;
+					i16_motor_temperature = (ui16_x4_value - 105) >> 1;
+					i16_motor_temperature += (ui16_BatteryCurrent - ui16_current_cal_b - 2) / 13;
 					i16_temperature_accumulated -= i16_temperature_accumulated >> 3;
-					i16_temperature_accumulated += i8_motor_temperature;
-					i8_motor_temperature = i16_temperature_accumulated >> 3;
-					
-					//printf("X4: %u, temp: %d, calB: %u, current: %u\r\n", ui16_x4_value, i8_motor_temperature, ui16_current_cal_b, ui16_BatteryCurrent);
+					i16_temperature_accumulated += i16_motor_temperature;
+					i16_motor_temperature = i16_temperature_accumulated >> 3;
+					if (i16_motor_temperature > 142) {
+						i16_motor_temperature = 142;
+					}
+					//printf("X4: %u, temp: %d, calB: %u, current: %u\r\n", ui16_x4_value, i16_motor_temperature, ui16_current_cal_b, ui16_BatteryCurrent);
 				}
 
 #ifdef DIAGNOSTICS

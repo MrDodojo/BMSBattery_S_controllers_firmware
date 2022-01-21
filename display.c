@@ -75,19 +75,19 @@ void send_message() {
 	if (pasIsSet) { ui8_moving_indication |= (1 << 4); }
 	*/
 
-	if (((ui16_aca_flags & EXTERNAL_SPEED_SENSOR) == EXTERNAL_SPEED_SENSOR)) {
+	/*if (((ui16_aca_flags & EXTERNAL_SPEED_SENSOR) == EXTERNAL_SPEED_SENSOR)) {
 		if (ui16_time_ticks_between_speed_interrupt > 65000) {
 			ui16_wheel_period_ms = 4500;
 		} else {
 			ui16_wheel_period_ms = (uint16_t) ((float) ui16_time_ticks_between_speed_interrupt / ((float) ui16_pwm_cycles_second / 1000.0)); //must be /1000 devided in /125/8 for better resolution
 		}
-	}else{
+	}else{*/
 		if (ui32_erps_filtered == 0) {
 			ui16_wheel_period_ms = 4500;
 		} else {
 			ui16_wheel_period_ms = (uint16_t) (1000.0 * (float) ui8_gear_ratio / (float) ui32_erps_filtered);
 		}
-	}
+	//}
 
 	// calc battery pack state of charge (SOC)
 	ui16_battery_bars_calc = ui8_adc_read_battery_voltage();
@@ -157,15 +157,13 @@ void send_message() {
 	// - B8 = 100, LCD shows 750 watts
 	// each unit of B8 = 0.25A
 	
-	
-	
 	i16_temp = ui16_BatteryCurrent - ui16_current_cal_b;
-	if (i16_temp < 0) {
+	if (i16_temp < -2) {
 		//i16_temp = -i16_temp;
 		//i16_temp += 2;
 		ui8_tx_buffer[8] = (((-i16_temp) << 2) * 10) / ui8_current_cal_a;
 	}
-	else if(i16_temp > 5) {
+	else if(i16_temp > 6) {
 		//i16_temp -= 2;
 		ui8_tx_buffer[8] = (((i16_temp-2) << 2) * 10) / ui8_current_cal_a;
 	} else {
@@ -173,7 +171,7 @@ void send_message() {
 	}
 	//ui8_tx_buffer[8] = (uint8_t)((((ui16_BatteryCurrent - ui16_current_cal_b) << 2+1) * 10) / ui8_current_cal_a);//orignally was +1
 	// B9: motor temperature
-	ui8_tx_buffer [9] = i8_motor_temperature - 15; //according to documentation at endless sphere
+	ui8_tx_buffer [9] = (i16_motor_temperature - 15); //according to documentation at endless sphere
 	// B10 and B11: 0
 	ui8_tx_buffer [10] = 128;
 	ui8_tx_buffer [11] = 33;
@@ -202,11 +200,11 @@ void digestLcdValues(void) {
 	ui8_walk_assist = lcd_configuration_variables.ui8_WalkModus_On;
 	// added by DerBastler Light On/Off
 	light_stat = (light_stat&~128) | lcd_configuration_variables.ui8_light_On; // only update 7th bit, 1st bit is current status
-	
-	if (lcd_configuration_variables.ui8_max_speed != ui8_speedlimit_kph) {
+	ui8_maxOffroadSpeed = lcd_configuration_variables.ui8_max_speed;
+	/*if (lcd_configuration_variables.ui8_max_speed != ui8_speedlimit_kph) {
 		ui8_speedlimit_kph = lcd_configuration_variables.ui8_max_speed;
 		eeprom_write(OFFSET_MAX_SPEED_DEFAULT, lcd_configuration_variables.ui8_max_speed);
-	}
+	}*/
 }
 
 // see if we have a received package to be processed

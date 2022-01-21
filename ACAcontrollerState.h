@@ -73,7 +73,7 @@ extern uint8_t ui8_variableDebugA;
 extern uint8_t ui8_variableDebugB;
 extern uint8_t ui8_variableDebugC;
 
-extern int8_t i8_motor_temperature;
+extern int8_t i16_motor_temperature;
 
 extern uint8_t uint8_t_60deg_pwm_cycles[6];
 extern uint8_t uint8_t_hall_case[7];
@@ -141,6 +141,7 @@ extern uint8_t walk_stat;
 extern uint8_t ui8_moving_indication;
 extern uint8_t ui8_cruiseThrottleSetting;
 extern uint8_t ui8_cruiseMinThrottle;
+extern uint8_t ui8_maxOffroadSpeed;
 
 
 

@@ -269,7 +269,7 @@ void updatePasStatus(void) {
 		}
 
 
-		if (((ui16_aca_flags & TQ_SENSOR_MODE) == TQ_SENSOR_MODE)) {
+		/*if (((ui16_aca_flags & TQ_SENSOR_MODE) == TQ_SENSOR_MODE)) {
 			ui8_temp = ui8_adc_read_throttle(); //read in recent torque value
 			ui16_torque[ui8_torque_index] = (uint8_t) map(ui8_temp, ui8_throttle_min_range, ui8_throttle_max_range, 0, SETPOINT_MAX_VALUE); //map throttle to limits
 
@@ -278,7 +278,7 @@ void updatePasStatus(void) {
 				ui8_torque_index = 0;
 			} //reset index counter
 
-		}
+		}*/
 
 		updatePasDir();
 		ui16_time_ticks_for_pas_calculation = 1;
@@ -313,7 +313,7 @@ void updateSlowLoopStates(void) {
 		ui8_lockstatus = 255;
 	}
 	
-	if (((ui16_aca_flags & IDLE_DISABLES_OFFROAD) == IDLE_DISABLES_OFFROAD) && (ui8_offroad_state > 4) && (ui16_idle_counter > 3000)) {
+	/*if (((ui16_aca_flags & IDLE_DISABLES_OFFROAD) == IDLE_DISABLES_OFFROAD) && (ui8_offroad_state > 4) && (ui16_idle_counter > 3000)) {
 		//disable after 60 seconds idle
 		ui8_offroad_state = 0;
 	}
@@ -329,7 +329,7 @@ void updateSlowLoopStates(void) {
 		} else {
 			ui8_offroad_counter = 0;
 		}
-	}
+	}*/
 
 	// check if offroad mode is enabled
 	if (0 == (ui16_aca_flags & OFFROAD_ENABLED)) {
@@ -389,12 +389,12 @@ void updateSlowLoopStates(void) {
 		if (ui8_offroad_counter > 150) {
 			ui8_offroad_state = 255;
 			ui8_offroad_counter = 0;
-			ui16_battery_current_max_value = 200;
-			ui8_a_s_assistlevels[1] = 4;
-			ui8_a_s_assistlevels[2] = 7;
-			ui8_a_s_assistlevels[3] = 13;
+			ui16_battery_current_max_value = 206;
+			ui8_a_s_assistlevels[1] = 8;
+			ui8_a_s_assistlevels[2] = 14;
+			ui8_a_s_assistlevels[3] = 20;
 			ui8_a_s_assistlevels[4] = 26;
-			ui8_a_s_assistlevels[5] = 50;
+			ui8_a_s_assistlevels[5] = 32;
 		}
 	}
 

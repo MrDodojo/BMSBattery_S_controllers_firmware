@@ -166,10 +166,11 @@ void updateCorrection() { //simple FOC is done here
 	}
 	//Field weakening, q current is regulated to a minus value in field weakening mode instead of zero, resulting in higher speed
 	//if (ui16_momentary_throttle > 191 && ui16_setpoint == 255 && ui16_motor_speed_erps > 110 && ui16_BatteryCurrent < (140+ui16_current_cal_b)) {
-	if (ui8_assistlevel_global == 5 && ui16_momentary_throttle > 191 && ui16_setpoint == 255 && ui16_motor_speed_erps > 110 && ui16_BatteryCurrent < (150+ui16_current_cal_b)) {
-		ui8_temp = (ui16_momentary_throttle - 192) << 1; //or ui8_temp = (ui16_momentary_throttle - 192) >> 1;
+
+	if (ui8_assistlevel_global == 5 && ui16_momentary_throttle > 174 && ui16_setpoint == 255) {
+		ui8_temp = (ui16_momentary_throttle - 175) << 1; //or ui8_temp = (ui16_momentary_throttle - 192) >> 1;
 		//or ui8_temp = (ui16_momentary_throttle - 192) >> 2
-		if (ui8_temp > ui8_allowMoreAdvance) {
+		if (ui8_temp > ui8_allowMoreAdvance && ui16_BatteryCurrent < (170 + ui16_current_cal_b)) {
 			ui8_allowMoreAdvance++;
 		}
 		else if (ui8_temp < ui8_allowMoreAdvance) {
@@ -181,10 +182,10 @@ void updateCorrection() { //simple FOC is done here
 	}//*/
 		
 	if (ui16_motor_speed_erps > 3 && ui16_BatteryCurrent > ui16_current_cal_b + 3) { //normal riding, //OFFSET OF CALB
-		if (ui16_ADC_iq_current > (513-ui8_allowMoreAdvance) && ui8_position_correction_value < 143) { //q current > 128 original
+		if (ui16_ADC_iq_current > (513-ui8_allowMoreAdvance) && ui8_position_correction_value < 147) { //q current > 128 original
 			ui8_position_correction_value++;
 		}
-		else if (ui16_ADC_iq_current < (510-ui8_allowMoreAdvance) && ui8_position_correction_value > 111) { //q current > 126 original
+		else if (ui16_ADC_iq_current < (510-ui8_allowMoreAdvance) && ui8_position_correction_value > 115) { //q current > 126 original
 			ui8_position_correction_value--;
 		}
 	}

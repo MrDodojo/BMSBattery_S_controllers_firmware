@@ -35,7 +35,7 @@ uint8_t ui8_speedlimit_actual_kph; // dynamic speedlimit based on current state
 float flt_s_pas_threshold = 1.7;
 float flt_s_pid_gain_p = 0.5;
 float flt_s_pid_gain_i = 0.2;
-float flt_s_motor_constant = 1.75; //1.5 original
+float flt_s_motor_constant = 1.85; //1.5 original
 float flt_torquesensorCalibration = 0.0;
 //float float_dc = 0;
 uint16_t ui16_s_ramp_end = 1500;
@@ -101,7 +101,7 @@ uint8_t ui8_variableDebugA = 0;
 uint8_t ui8_variableDebugB = 0;
 uint8_t ui8_variableDebugC = 0;
 
-int8_t i8_motor_temperature = 0;
+int8_t i16_motor_temperature = 0;
 
 uint8_t uint8_t_60deg_pwm_cycles[6];
 uint8_t uint8_t_hall_case[7];
@@ -143,6 +143,7 @@ uint8_t walk_stat = 0;
 uint8_t ui8_moving_indication = 0;
 uint8_t ui8_cruiseThrottleSetting = 0;
 uint8_t ui8_cruiseMinThrottle = 0;
+uint8_t ui8_maxOffroadSpeed = 0;
 
 
 

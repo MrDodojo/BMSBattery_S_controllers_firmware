@@ -101,15 +101,15 @@ void aca_setpoint_init(void) {
 
 uint16_t aca_setpoint(uint16_t ui16_time_ticks_between_pas_interrupt, uint16_t setpoint_old) {
 	// select virtual erps speed based on speedsensor type
-	if (((ui16_aca_flags & EXTERNAL_SPEED_SENSOR) == EXTERNAL_SPEED_SENSOR)) {
+	/*if (((ui16_aca_flags & EXTERNAL_SPEED_SENSOR) == EXTERNAL_SPEED_SENSOR)) {
 		ui16_virtual_erps_speed = (uint16_t) ((((uint32_t)ui8_gear_ratio) * ui32_speed_sensor_rpks) /1000); 
-	}else{
+	}else{*/
 		ui16_virtual_erps_speed = (uint16_t) ui32_erps_filtered;
-	}
+	//}
 
 	// first select current speed limit
 	if (ui8_offroad_state == 255) {
-		ui8_speedlimit_actual_kph = 80;		
+		ui8_speedlimit_actual_kph = ui8_maxOffroadSpeed;
 	} /*else if (ui8_offroad_state > 15 && ui16_sum_throttle <= 2) { // allow a slight increase based on ui8_offroad_state
 		ui8_speedlimit_actual_kph = ui8_speedlimit_kph + (ui8_offroad_state - 16);
 	} else if (ui8_offroad_state > 15 && ui16_sum_throttle > 2) {
@@ -132,15 +132,7 @@ uint16_t aca_setpoint(uint16_t ui16_time_ticks_between_pas_interrupt, uint16_t s
 	ui8_assist_percent_actual = ui16_assist_percent_smoothed >> 4;
 
 
-	// average throttle over a longer time period (for dynamic assist level) 
-	if ((ui16_aca_flags & DYNAMIC_ASSIST_LEVEL) == DYNAMIC_ASSIST_LEVEL) {
-		ui32_sumthrottle_accumulated -= ui32_sumthrottle_accumulated >> 10;
-		ui32_sumthrottle_accumulated += ui16_sum_throttle;
-		ui8_assist_dynamic_percent_addon = ui32_sumthrottle_accumulated >> 10;
-		if ((ui8_assist_dynamic_percent_addon + ui8_assist_percent_actual) > 100) {
-			ui8_assist_dynamic_percent_addon = 100 - ui8_assist_percent_actual;
-		}
-	}
+	
 
 	ui16_BatteryCurrent_accumulated -= ui16_BatteryCurrent_accumulated >> 3;
 	ui16_BatteryCurrent_accumulated += ui16_adc_read_motor_total_current();
@@ -168,12 +160,10 @@ uint16_t aca_setpoint(uint16_t ui16_time_ticks_between_pas_interrupt, uint16_t s
 	// check for brake --> set regen current
 	if (brake_is_set()) {
 		ui8_cruiseThrottleSetting = 0;
-		/*if (brakingBefore == 0) {
-			float_dc = 0;
-		}
-		brakingBefore = 1;*/
 		ui8_moving_indication |= (32);
-		controll_state_temp = 255;
+
+		//controll_state_temp = 255; //not needed for disp setup
+
 		//Current target based on regen assist level
 		/*if ((ui16_aca_flags & DIGITAL_REGEN) == DIGITAL_REGEN) {
 
@@ -184,12 +174,14 @@ uint16_t aca_setpoint(uint16_t ui16_time_ticks_between_pas_interrupt, uint16_t s
 			//Current target based on linear input on pad X4
 		} else {*/
 			//ui8_temp = map(ui16_momentary_throttle, ui8_throttle_min_range, 256, 0, 128); //map regen throttle to limits
-			controll_state_temp -= 2;
+
+			//controll_state_temp -= 2; //not needed for disp setup
+
 		//}
 		//float_temp = (float) ui8_temp * (float) (ui16_regen_current_max_value) / 100.0;
 		
 			uint16_temp = (ui16_momentary_throttle * ui16_regen_current_max_value) >> 8;
-			//i8_motor_temperature = uint16_temp;
+			//i16_motor_temperature = uint16_temp;
 			//ui8_temp = map(ui16_momentary_throttle, ui8_throttle_min_range, ui8_throttle_max_range, 0, 128); //use throttle to vary regen when braking
 			//float_temp = ((ui8_temp * ui16_regen_current_max_value) >> 7);
 		//uint16_temp = ui8_temp * ui16_regen_current_max_value >> 7;
@@ -197,7 +189,7 @@ uint16_t aca_setpoint(uint16_t ui16_time_ticks_between_pas_interrupt, uint16_t s
 		
 
 		//Current target gets ramped down with speed
-		if (((ui16_aca_flags & SPEED_INFLUENCES_REGEN) == SPEED_INFLUENCES_REGEN) && (ui16_virtual_erps_speed < ((ui16_speed_kph_to_erps_ratio * ((uint16_t) ui8_speedlimit_kph)) / 100))) {
+		/*if (((ui16_aca_flags & SPEED_INFLUENCES_REGEN) == SPEED_INFLUENCES_REGEN) && (ui16_virtual_erps_speed < ((ui16_speed_kph_to_erps_ratio * ((uint16_t) ui8_speedlimit_kph)) / 100))) {
 
 			if (ui16_virtual_erps_speed < 15) {
 				// turn of regen at low speeds
@@ -208,7 +200,7 @@ uint16_t aca_setpoint(uint16_t ui16_time_ticks_between_pas_interrupt, uint16_t s
 				uint16_temp *= ((float) ui16_virtual_erps_speed / ((float) (ui16_speed_kph_to_erps_ratio * ((float) ui8_speedlimit_kph)) / 100.0)); // influence of current speed based on base speed limit
 				controll_state_temp -= 4;
 			}
-		}
+		}*/
 
 		uint32_current_target = ui16_current_cal_b - uint16_temp;
 		//uint32_current_target = (uint32_t)ui16_current_cal_b - float_temp;
@@ -217,11 +209,11 @@ uint16_t aca_setpoint(uint16_t ui16_time_ticks_between_pas_interrupt, uint16_t s
 			ui32_dutycycle = PI_control(ui16_BatteryCurrent, uint32_current_target,uint_PWM_Enable);
 		}
 		
-		if (((ui16_aca_flags & BYPASS_LOW_SPEED_REGEN_PI_CONTROL) == BYPASS_LOW_SPEED_REGEN_PI_CONTROL) && (ui32_dutycycle == 0)) {
+		/*if (((ui16_aca_flags & BYPASS_LOW_SPEED_REGEN_PI_CONTROL) == BYPASS_LOW_SPEED_REGEN_PI_CONTROL) && (ui32_dutycycle == 0)) {
 			//try to get best regen at Low Speeds for BionX IGH
 			ui32_dutycycle = ui16_virtual_erps_speed * 2;
 			controll_state_temp -= 8;
-		}
+		}*/
 		//printf("duty, %u, erps, %u, current, %u\r\n", ui16_setpoint, ui16_motor_speed_erps, ui16_BatteryCurrent);
 	} else {
 		
@@ -237,9 +229,23 @@ uint16_t aca_setpoint(uint16_t ui16_time_ticks_between_pas_interrupt, uint16_t s
 			// add dynamic assist level based on past throttle input
 			ui8_temp = ui8_assist_percent_actual;
 
+			// average throttle over a longer time period (for dynamic assist level) 
 			if ((ui16_aca_flags & DYNAMIC_ASSIST_LEVEL) == DYNAMIC_ASSIST_LEVEL) {
-				ui8_temp += ui8_assist_dynamic_percent_addon;
+				ui32_sumthrottle_accumulated -= ui32_sumthrottle_accumulated >> 10;
+				ui32_sumthrottle_accumulated += ui16_sum_throttle;
+				ui8_assist_dynamic_percent_addon = ui32_sumthrottle_accumulated >> 10;
+
+				if ((ui8_assist_dynamic_percent_addon + ui8_assist_percent_actual) > 100) {
+					ui8_temp = 100;
+				}
+				else {
+					ui8_temp += ui8_assist_dynamic_percent_addon;
+				}
 			}
+
+			/*if ((ui16_aca_flags & DYNAMIC_ASSIST_LEVEL) == DYNAMIC_ASSIST_LEVEL) {
+				ui8_temp += ui8_assist_dynamic_percent_addon;
+			}*/
 
 			if (ui16_time_ticks_between_pas_interrupt_smoothed > ui16_s_ramp_end) { //ramp end usually 1500
 				//if you are pedaling slower than defined ramp end
@@ -297,7 +303,7 @@ uint16_t aca_setpoint(uint16_t ui16_time_ticks_between_pas_interrupt, uint16_t s
 				float_temp = (float) ui16_sum_throttle;
 			}
 		} else {*///CHANGED
-		if (ui8_cruiseThrottleSetting >= 25) {
+		if (ui8_cruiseThrottleSetting > 25) {
 			ui8_moving_indication |= (8);
 			uint16_temp = ui8_cruiseThrottleSetting;
 			}
@@ -360,7 +366,7 @@ uint16_t aca_setpoint(uint16_t ui16_time_ticks_between_pas_interrupt, uint16_t s
 		
 		
 		
-		if (ui8_assistlevel_global == 0) {
+		if (ui8_assistlevel_global == 0 || (uint32_current_target - ui16_current_cal_b < 3)) {
 			uint32_current_target = ui16_current_cal_b;
 		}//*/
 
@@ -370,7 +376,7 @@ uint16_t aca_setpoint(uint16_t ui16_time_ticks_between_pas_interrupt, uint16_t s
 		}else if (!checkUnderVoltageOverride() && !checkMaxErpsOverride()) {
 
 			if (ui8_walk_assist) {
-				uint32_current_target = 15 + ui16_current_cal_b;
+				uint32_current_target = 16 + ui16_current_cal_b;
 				uint32_current_target = CheckSpeed((uint16_t)uint32_current_target, (uint16_t)ui16_virtual_erps_speed, (ui16_speed_kph_to_erps_ratio * ((uint16_t)3)) / 100, (ui16_speed_kph_to_erps_ratio * ((uint16_t)(5))) / 100); //limit speed
 			}
 
@@ -380,7 +386,7 @@ uint16_t aca_setpoint(uint16_t ui16_time_ticks_between_pas_interrupt, uint16_t s
 				//ui8_temp = ((ui8_s_battery_voltage_max - ui8_s_battery_voltage_min) >> 1) + ui8_s_battery_voltage_min;
 				//ui8_temp = 193;
 				//uint32_current_target *= ui8_temp / ui8_BatteryVoltage;
-				if (ui8_moving_indication & 16 == 16) {
+				if (ui8_moving_indication & 16 == 16 || ui8_walk_assist || ui8_speedlimit_actual_kph < 30) {
 					uint32_current_target -= ui16_current_cal_b;
 					uint32_current_target *= 193;
 					uint32_current_target /= ui8_BatteryVoltage;
@@ -398,7 +404,7 @@ uint16_t aca_setpoint(uint16_t ui16_time_ticks_between_pas_interrupt, uint16_t s
 	if ((ui16_aca_experimental_flags & PWM_AUTO_OFF) == PWM_AUTO_OFF) {
 		controll_state_temp += 512;
 		//disable PWM if enabled and no power is wanted
-		if (uint_PWM_Enable && ui32_erps_filtered == 0 && uint32_current_target == ui16_current_cal_b || ui8_BatteryVoltage < (ui8_s_battery_voltage_min-2)) {
+		if (uint_PWM_Enable && uint32_current_target == ui16_current_cal_b || ui8_BatteryVoltage < (ui8_s_battery_voltage_min-2)) {
 			TIM1_CtrlPWMOutputs(DISABLE);
 			uint_PWM_Enable = 0;
 		}
