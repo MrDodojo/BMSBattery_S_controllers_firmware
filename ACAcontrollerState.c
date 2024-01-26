@@ -105,6 +105,7 @@ int8_t i8_motor_temperature = 0;
 uint8_t uint8_t_60deg_pwm_cycles[6];
 uint8_t uint8_t_hall_case[7];
 uint8_t uint8_t_hall_order[6];
+uint8_t current_hall;
 int8_t int8_t_hall_counter = 0;
 uint8_t ui8_hall_order_counter = 5;
 
@@ -249,7 +250,7 @@ void controllerstate_init(void) {
 	eepromVal = eeprom_read(OFFSET_CORRECTION_AT_ANGLE);
 	if (eepromVal > 0) ui8_correction_at_angle = eepromVal;
 	
-	eepromVal = eeprom_read(OFFSET_HALL_ANGLE_4_0);
+	/*eepromVal = eeprom_read(OFFSET_HALL_ANGLE_4_0);
 	if (eepromVal > 0) ui8_s_hall_angle4_0 = eepromVal;
 	eepromVal = eeprom_read(OFFSET_HALL_ANGLE_6_60);
 	if (eepromVal > 0) ui8_s_hall_angle6_60 = eepromVal;
@@ -260,7 +261,7 @@ void controllerstate_init(void) {
 	eepromVal = eeprom_read(OFFSET_HALL_ANGLE_1_240);
 	if (eepromVal > 0) ui8_s_hall_angle1_240 = eepromVal;
 	eepromVal = eeprom_read(OFFSET_HALL_ANGLE_5_300);
-	if (eepromVal > 0) ui8_s_hall_angle5_300 = eepromVal;
+	if (eepromVal > 0) ui8_s_hall_angle5_300 = eepromVal;*/
 	
 	eepromVal = eeprom_read(OFFSET_ASSIST_PERCENT_LEVEL_1);
 	if (eepromVal > 0) ui8_a_s_assistlevels[1] = eepromVal;

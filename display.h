@@ -81,7 +81,77 @@ typedef struct _lcd_configuration_variables
   uint8_t ui8_c13;
   uint8_t ui8_c14;
 } struc_lcd_configuration_variables;
+#elif defined DISPLAY_TYPE_KT_LCD8
 
+typedef struct LCD8_display_data_t {
+	union  {
+		uint8_t raw[13];
+		struct {
+			uint8_t 	p5; // B0
+			uint8_t 	assist_level : 3;
+			uint8_t 	unknown : 4;
+			uint8_t 	lights : 1; // B1
+			uint8_t 	wheel_size_msb : 3;
+			uint8_t 	max_speed_lsb : 5; // B2
+			uint8_t 	p1; // B3
+			uint8_t 	p2 : 3;
+			uint8_t 	p3 : 1;
+			uint8_t 	p4 : 1;
+			uint8_t 	max_speed_msb : 1;
+			uint8_t 	wheel_size_lsb : 2; // B4
+			uint8_t 	crc; // B5
+			uint8_t 	c2 : 3;
+			uint8_t		c1 : 3;
+			uint8_t 	unkown2 : 2; // B6
+			uint8_t 	c5 : 4;
+			uint8_t 	unknown4 : 1;
+			uint8_t 	c14 : 2;
+			uint8_t 	unknown3 : 1; // B7
+			uint8_t 	c12 : 5;
+			uint8_t 	c4 : 3; // B8
+			uint8_t 	B9; // B9
+			uint8_t 	unknown6 : 2;
+			uint8_t 	c13 : 3;
+			uint8_t 	c15 : 2;
+			uint8_t 	unknown5 : 1; // B10
+			uint8_t 	c4_percentage : 6;
+			uint8_t 	l1 : 2; // B11
+			uint8_t 	B12;
+		};
+	};
+	uint8_t max_speed;
+	uint8_t wheel_size;
+} LCD8_display_data;
+
+typedef struct LCD8_controller_data_t {
+	union {
+		uint8_t raw[12];
+		struct {
+			uint8_t B0; // always 0x41
+			uint8_t charging_status : 2;
+			uint8_t bars : 3;
+			uint8_t unknown1 : 3; // B1
+			uint8_t nominal_voltage : 6;
+			uint8_t reverse : 1;
+			uint8_t unknown2 : 1; // B2
+			uint16_t rotation; // B3+B4
+			uint8_t error; // B5
+			uint8_t crc; // B6
+			uint8_t mode_normal : 1;
+			uint8_t mode_throttle : 1;
+			uint8_t mode_unknown : 1;
+			uint8_t mode_cruise : 1;
+			uint8_t mode_assist : 1;
+			uint8_t mode_regen : 1;
+			uint8_t unknown4 : 2; // B7
+			uint8_t amps; // B8
+			uint8_t motor_temperature; // B9
+			uint8_t B10;
+			uint8_t B11;
+			uint8_t B12;
+		};
+	};
+} LCD8_controller_data;
 #endif
 
 #endif

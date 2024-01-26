@@ -171,12 +171,19 @@ void addConfigStateInfosB(void) {
 }
 
 void addHallStateInfos(void) {
-	addPayload(CODE_CURRENT_AT_HALL_POSITION_BASE + 0x00, uint8_t_hall_case[0]);
+	for (int i = 0; i < 6; i++) {
+		int16_t p = uint8_t_hall_case[i];
+		p = p - 127;
+		p *= 10;
+		p += 127;
+		addPayload(CODE_CURRENT_AT_HALL_POSITION_BASE + i, p & 0xFF);
+	}
+	/*addPayload(CODE_CURRENT_AT_HALL_POSITION_BASE + 0x00, uint8_t_hall_case[0]);
 	addPayload(CODE_CURRENT_AT_HALL_POSITION_BASE + 0x01, uint8_t_hall_case[1]);
 	addPayload(CODE_CURRENT_AT_HALL_POSITION_BASE + 0x02, uint8_t_hall_case[2]);
 	addPayload(CODE_CURRENT_AT_HALL_POSITION_BASE + 0x03, uint8_t_hall_case[3]);
 	addPayload(CODE_CURRENT_AT_HALL_POSITION_BASE + 0x04, uint8_t_hall_case[4]);
-	addPayload(CODE_CURRENT_AT_HALL_POSITION_BASE + 0x05, uint8_t_hall_case[5]);
+	addPayload(CODE_CURRENT_AT_HALL_POSITION_BASE + 0x05, uint8_t_hall_case[5]);*/
 	addPayload(CODE_HALL_ORDER_BASE + 0x00, uint8_t_hall_order[0]);
 	addPayload(CODE_HALL_ORDER_BASE + 0x01, uint8_t_hall_order[1]);
 	addPayload(CODE_HALL_ORDER_BASE + 0x02, uint8_t_hall_order[2]);
@@ -203,6 +210,7 @@ void addDetailStateInfos(void) {
 	addPayload(CODE_PAS_DIR, PAS_is_active);
 	addPayload(CODE_CORRECTION_VALUE, ui8_position_correction_value);
 	addPayload(CODE_PHASE_CURRENT, ui16_ADC_iq_current >> 2);
+	//addPayload(CODE_PHASE_CURRENT, ui16_ADC_iq_current_accumulated);
 	addPayload(CODE_THROTTLE_HIGH_BYTE, ui16_momentary_throttle >> 8);
 	addPayload(CODE_THROTTLE, ui16_momentary_throttle);
 	addPayload(CODE_CURRENT_TARGET_HIGH_BYTE, uint32_current_target >> 8);

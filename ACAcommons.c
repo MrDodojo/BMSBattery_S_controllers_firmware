@@ -153,13 +153,14 @@ void initErpsRatio(void) {
 	//if (readAndClearSignal(SIGNAL_SPEEDLIMIT_CHANGED) == 1) 
 	ui16_speed_kph_to_erps_ratio = (uint16_t) ((float) ui8_gear_ratio * 1000000.0 / ((float) wheel_circumference * 36.0));
 }
-
+uint8_t hall_debounce = 0;
 void updateHallOrder(uint8_t hall_sensors) {
-
+	
 	if (++ui8_hall_order_counter > 5) {
 		ui8_hall_order_counter = 0;
 	}
 	uint8_t_hall_order[ui8_hall_order_counter] = hall_sensors;
+	current_hall = hall_sensors;
 }
 
 void updatePasDir(void) {

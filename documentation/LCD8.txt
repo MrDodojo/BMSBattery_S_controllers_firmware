@@ -1,0 +1,73 @@
+Controller to display:
+
+[B0..11], 12 bytes, 9k6 8n1, high idle
+
+B0 0x41
+B1
+- 	xxxxxxNN 	Battery charging indicator, bitfield
+	      00	- Empty box
+	      01	- Border flashing
+	      10	- Charging animation
+        xxxNNNxx	- Bars
+	   00000	- No bars
+	   00100	- 1 bar
+	   01000	- 2 bars
+	   01100	- 3 bars
+	   10000	- 4 bars
+			 
+B2: 
+	xNxxxxxx	- 0x40 - Reverse
+B3+B4: (256 * B3) + B4 -> ms/rotation. Note: standstill is 0x1B0A
+B5: 	0x20 -> communication fault
+	0x21 -> Motor controller short circuit fault
+	0x22 -> Throttle fault
+	0x24 -> Motor position sensor fault
+
+B6 CRC (xor is 0x41)
+B7: 
+	.......1	- Normal (none)
+	......1.	- Thorttle text
+	....1...	- Cruise icon and cruise text
+	...1....	- Assist text
+	..1.....	- >O< logo
+B8: Amperage in 0.25a increments (* Voltage)
+B9: does nothing
+B10: does nothing
+B11: does nothing
+B12: does nothing 
+	
+						
+Display to controller:
+
+B0...12, 13 bytes, 9k6m 8n1, high idle
+
+B0: P5 value (8 bit int)
+B1: 
+	n....... front light
+	.....nnn assist level (6 for walk mode)
+B2 + B4:
+	nnnnn... ..n..... max speed minus 1 (B4 bit3 is MSB)
+	.....nnn nn...... wheel size, list, see LCD3, 28" = 0x1C
+B3: P1 value (8 bit int)
+B4: 
+	.....NNN P2 3 bit integer (0-7)
+	....N... P3 1 bit integer (0-1)
+	...N.... P4
+	.N...... L2
+B5: CRC, xor is 0x1F
+B6:
+	..nnn... C1
+	.....nnn C2
+B7:	
+	.nn..... C14
+	....nnnn C5
+B8:	nnn..... C4
+	...nnnnn C12
+B9
+B10:	.nn..... C15 (0-2, shown as 4-6)
+	...nnn.. C13 (0-5)
+B11:	nn...... L1
+	..nnnnnn C4 percent parameter (if C4 is 4)
+B12:	0x0E
+
+

@@ -32,29 +32,27 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301  USA
 #include "interrupts.h"
 #include "ACAcontrollerState.h"
 
-#if defined DISPLAY_TYPE_KT_LCD3
-
+#ifdef DISPLAY_TYPE_KT_LCD8
 display_view_type display_view;
 display_mode_type display_mode; //currently display mode
 float current_display;
 uint8_t battery_percent_fromcapacity = 11; //hier nur als Konstante um Batterie normal zu senden....
 
 
-uint8_t ui8_tx_buffer[12];
 uint8_t ui8_j;
 uint8_t ui8_crc;
 uint16_t ui16_wheel_period_ms = 4500;
 uint16_t ui16_battery_bars_calc = 0;
 uint8_t ui8_battery_soc = 12;
 uint8_t ui16_error;
-uint8_t ui8_rx_buffer[13];
 uint8_t ui8_rx_buffer_counter = 0;
 uint8_t ui8_byte_received;
 
 uint8_t ui8_UARTCounter = 0;
 uint8_t ui8_cruiseHasBeenLow;
 
-volatile struc_lcd_configuration_variables lcd_configuration_variables;
+volatile LCD8_display_data lcd_data;
+LCD8_controller_data controller_data;
 
 void display_init(){
 	// noop just here to have a common interface
@@ -88,77 +86,80 @@ void send_message() {
 	ui16_battery_bars_calc = ui8_adc_read_battery_voltage() - ui8_s_battery_voltage_min;
 	ui16_battery_bars_calc<<=8;
 	ui16_battery_bars_calc /=(ui8_s_battery_voltage_max-ui8_s_battery_voltage_min);
-	
+
+	controller_data.charging_status = 0;
 	if (ui16_battery_bars_calc > 200) {
-		ui8_battery_soc = 16;
+		controller_data.bars = 4;
 	}// 4 bars | full
 	else if (ui16_battery_bars_calc > 150) {
-		ui8_battery_soc = 12;
+		controller_data.bars = 3;
 	}// 3 bars
 	else if (ui16_battery_bars_calc > 100) {
-		ui8_battery_soc = 8;
+		controller_data.bars = 2;
 	}// 2 bars
 	else if (ui16_battery_bars_calc > 50) {
-		ui8_battery_soc = 4;
+		controller_data.bars = 1;
 	}// 1 bar
 	else {
-		ui8_battery_soc = 3;
+		controller_data.charging_status = 3;
 	} // empty
 
-	ui8_tx_buffer [0] = 65;
-	// B1: battery level
-	ui8_tx_buffer [1] = ui8_battery_soc;
+	controller_data.B0 = 0x41;
 	// B2: 24V controller
-	ui8_tx_buffer [2] = ui8_battery_voltage_nominal;
+	controller_data.nominal_voltage = ui8_battery_voltage_nominal;
 	// B3: speed, wheel rotation period, ms; period(ms)=B3*256+B4;
-	ui8_tx_buffer [3] = (ui16_wheel_period_ms >> 8) & 0xff;
-	ui8_tx_buffer [4] = ui16_wheel_period_ms & 0xff;
+	controller_data.rotation = ui16_wheel_period_ms; // + 0x1B0A;
 
 	//Send confirming signal for activating offroad mode
 	if (ui8_offroad_state == 4) { //quitting signal for offroad mode enabled. Shows about 80 km/h for three seconds
 
-		ui8_tx_buffer [3] = (100 >> 8) & 0xff; //100ms are about 80 km/h @ 28" 2200mm wheel circumference
-		ui8_tx_buffer [4] = 100 & 0xff;
+		controller_data.rotation = 0xFFFF; // will always result in 80kph
 	}
 
 	// B5: error info display
-	ui8_tx_buffer [5] = ui16_error;
+	controller_data.error = ui16_error;
 	// B6: CRC: xor B1,B2,B3,B4,B5,B7,B8,B9,B10,B11
 	// 0 value so no effect on xor operation for now
-	ui8_tx_buffer [6] = 0;
 	// B7: moving mode indication, bit
-	// throttle: 2
-	ui8_tx_buffer [7] = ui8_moving_indication;
+#define MVI(x) ((ui8_moving_indication >> x) & 0x01)
+	controller_data.mode_regen = MVI(5);
+	controller_data.mode_assist = MVI(4);
+	controller_data.mode_cruise = MVI(3);
+	controller_data.mode_throttle = MVI(1);
+	controller_data.mode_normal = MVI(0);
 	// B8: 4x controller current
 	// Vbat = 30V:
 	// - B8 = 255, LCD shows 1912 watts
 	// - B8 = 250, LCD shows 1875 watts
 	// - B8 = 100, LCD shows 750 watts
 	// each unit of B8 = 0.25A
-
+	
 
 	if (ui16_BatteryCurrent <= ui16_current_cal_b + 2) { //avoid full power displayed at regen and avoid small watts being displayed when the bike 
-		ui8_tx_buffer[8] = 0;
+		controller_data.amps = 0;
 	}
 	else {
-		ui8_tx_buffer[8] = (uint8_t)((((ui16_BatteryCurrent - ui16_current_cal_b - 1) << 2) * 10) / ui8_current_cal_a);
+		controller_data.amps = (uint8_t)((((ui16_BatteryCurrent - ui16_current_cal_b - 1) << 2) * 10) / ui8_current_cal_a);
 	}
 	// B9: motor temperature
-	ui8_tx_buffer [9] = i8_motor_temperature - 15; //according to documentation at endless sphere
+	controller_data.motor_temperature = i8_motor_temperature - 15; //according to documentation at endless sphere
 	// B10 and B11: 0
-	ui8_tx_buffer [10] = 0;
-	ui8_tx_buffer [11] = 0;
-
+	controller_data.B10 = 0;
+	controller_data.B11 = 0;
+	//for (int i = 1; i < 12; i++) controller_data.raw[i] = 0xaa;
 	// calculate CRC xor
+	controller_data.crc = 0;
 	ui8_crc = 0;
 	for (ui8_j = 1; ui8_j <= 11; ui8_j++) {
-		ui8_crc ^= ui8_tx_buffer[ui8_j];
+		ui8_crc ^= controller_data.raw[ui8_j];
 	}
-	ui8_tx_buffer [6] = ui8_crc;
+	controller_data.crc = ui8_crc;
+
 
 	// send the package over UART
 	for (ui8_j = 0; ui8_j <= 11; ui8_j++) {
-		uart_put_buffered(ui8_tx_buffer [ui8_j]);
+		uart_put_buffered(controller_data.raw[ui8_j]);
+		//putchar(controller_data.raw[ui8_j]);
 	}
 }
 
@@ -168,14 +169,80 @@ void send_message() {
 
 void digestLcdValues(void) {
 
-	ui8_assistlevel_global = lcd_configuration_variables.ui8_assist_level + 80; // always add max regen 
-	ui8_walk_assist = lcd_configuration_variables.ui8_WalkModus_On;
+	ui8_assistlevel_global = lcd_data.assist_level + 80; // always add max regen 
+	ui8_walk_assist = (lcd_data.assist_level == 6);
 	// added by DerBastler Light On/Off
-	light_stat = (light_stat&~128) | lcd_configuration_variables.ui8_light_On; // only update 7th bit, 1st bit is current status
+	light_stat = (light_stat&~128) | lcd_data.lights; // only update 7th bit, 1st bit is current status
 	
-	if (lcd_configuration_variables.ui8_max_speed != ui8_speedlimit_kph) {
-		ui8_speedlimit_kph = lcd_configuration_variables.ui8_max_speed;
-		eeprom_write(OFFSET_MAX_SPEED_DEFAULT, lcd_configuration_variables.ui8_max_speed);
+	if (lcd_data.max_speed != ui8_speedlimit_kph) {
+		ui8_speedlimit_kph = lcd_data.max_speed;
+		eeprom_write(OFFSET_MAX_SPEED_DEFAULT, lcd_data.max_speed);
+	}
+
+/*	
+typedef enum {
+
+	DC_STATIC_ZERO = ((uint16_t) 1),
+	AVOID_MOTOR_CYCLES_JITTER = ((uint16_t) 2),
+	DISABLE_INTERPOLATION = ((uint16_t) 4),
+	DISABLE_60_DEG_INTERPOLATION = ((uint16_t) 8),
+	SWITCH_360_DEG_INTERPOLATION = ((uint16_t) 16),
+	USE_ALTERNATE_WAVETABLE = ((uint16_t) 32),
+	USE_ALTERNATE_WAVETABLE_B = ((uint16_t) 64),
+	DUMMY_EXP_ALWAYS_ON = ((uint16_t) 128),
+	HIGH_SPEED_MOTOR = ((uint16_t) 256),
+	PWM_AUTO_OFF = ((uint16_t) 1024),
+			
+} ACA_EXPERIMENTAL_FLAGS;*/
+
+	ui8_s_motor_angle = lcd_data.p1;	
+	
+	if (lcd_data.p2) {
+		ui16_aca_experimental_flags |= AVOID_MOTOR_CYCLES_JITTER;
+	} else {
+		ui16_aca_experimental_flags &= ~AVOID_MOTOR_CYCLES_JITTER;
+	}
+
+	if (lcd_data.p3) {
+		ui16_aca_experimental_flags |= PWM_AUTO_OFF;
+	} else {
+		ui16_aca_experimental_flags &= ~PWM_AUTO_OFF;
+	}
+
+	if (lcd_data.p4) {
+		ui16_aca_experimental_flags |= DC_STATIC_ZERO;
+	} else {
+		ui16_aca_experimental_flags &= ~DC_STATIC_ZERO;
+	}
+
+	if (lcd_data.c1 & 0x01) {
+		ui16_aca_flags |= OFFROAD_ENABLED;
+	} else {
+		ui16_aca_flags &= ~OFFROAD_ENABLED;
+	}
+
+	if (lcd_data.c1 & 0x02) {
+		ui16_aca_flags |= BRAKE_DISABLES_OFFROAD;
+	} else {
+		ui16_aca_flags &= ~BRAKE_DISABLES_OFFROAD;
+	}
+
+	if (lcd_data.c1 & 0x04) {
+		ui16_aca_flags |= IDLE_DISABLES_OFFROAD;
+	} else {
+		ui16_aca_flags &= ~IDLE_DISABLES_OFFROAD;
+	}
+
+	if (lcd_data.c2) {
+		ui16_aca_flags |= PAS_INVERTED;
+	} else {
+		ui16_aca_flags &= ~PAS_INVERTED;
+	}
+
+	if (lcd_data.c4) {
+		ui16_aca_flags |= ASSIST_LVL_AFFECTS_THROTTLE;
+	} else {
+		ui16_aca_flags &= ~ASSIST_LVL_AFFECTS_THROTTLE;
 	}
 }
 
@@ -184,10 +251,11 @@ void digestLcdValues(void) {
 void display_update() {
 
 	// fill local buffer from uart ringbuffer
-	uart_fill_rx_packet_buffer(ui8_rx_buffer, 13, &ui8_UARTCounter);
+	// new: we put in a packed union so we do not have to mess with calculating the offset
+	uart_fill_rx_packet_buffer(lcd_data.raw, 13, &ui8_UARTCounter);
 	
 	// Check for reception of complete message
-	if ((ui8_UARTCounter > 12) || (ui8_rx_buffer[ui8_UARTCounter - 1] == 0x0E)) {
+	if ((ui8_UARTCounter > 12)) { // && (lcd_data.B12 == 0x0E)) {
 		ui8_UARTCounter = 0;
 
 		// validation of the package data
@@ -195,64 +263,39 @@ void display_update() {
 		for (ui8_j = 0; ui8_j <= 12; ui8_j++) {
 			
 			if (ui8_j == 5) continue; // don't xor B5 
-			ui8_crc ^= ui8_rx_buffer[ui8_j];
+			ui8_crc ^= lcd_data.raw[ui8_j];
 		}
 
 		// see if CRC is ok
-#ifdef ASDASDASD
-		if (((ui8_crc ^ 0x1F) == ui8_rx_buffer [5]))
-#else
-		if (((ui8_crc ^ 10) == ui8_rx_buffer [5]) || // some versions of CRC LCD5 (??)
-				((ui8_crc ^ 1) == ui8_rx_buffer [5]) || // CRC LCD3 (tested with KT36/48SVPR, from PSWpower)
-				((ui8_crc ^ 2) == ui8_rx_buffer [5]) || // CRC LCD5
-				((ui8_crc ^ 3) == ui8_rx_buffer [5]) || // CRC LCD5 Added display 5 Romanta
-				((ui8_crc ^ 4) == ui8_rx_buffer [5]) ||
-		    		((ui8_crc ^ 5) == ui8_rx_buffer [5]) ||
-		    		((ui8_crc ^ 6) == ui8_rx_buffer [5]) ||
-		    		((ui8_crc ^ 7) == ui8_rx_buffer [5]) ||
-		    		((ui8_crc ^ 8) == ui8_rx_buffer [5]) ||
-		    		((ui8_crc ^ 14) == ui8_rx_buffer [5]) ||
-				((ui8_crc ^ 9) == ui8_rx_buffer [5]) ||// CRC LCD3
-				((ui8_crc ^ 23) == ui8_rx_buffer[5])) // CRC of an LCD8
-#endif 								   
+		if (((ui8_crc ^ 10) == lcd_data.crc) || // some versions of CRC LCD5 (??)
+                                ((ui8_crc ^ 1) == lcd_data.crc) || // CRC LCD3 (tested with KT36/48SVPR, from PSWpower)
+                                ((ui8_crc ^ 2) == lcd_data.crc) || // CRC LCD5
+                                ((ui8_crc ^ 3) == lcd_data.crc) || // CRC LCD5 Added display 5 Romanta
+                                ((ui8_crc ^ 4) == lcd_data.crc) ||
+                                ((ui8_crc ^ 5) == lcd_data.crc) ||
+                                ((ui8_crc ^ 6) == lcd_data.crc) ||
+                                ((ui8_crc ^ 7) == lcd_data.crc) ||
+                                ((ui8_crc ^ 8) == lcd_data.crc) ||
+                                ((ui8_crc ^ 14) == lcd_data.crc) ||
+                                ((ui8_crc ^ 9) == lcd_data.crc) ||// CRC LCD3
+                                ((ui8_crc ^ 23) == lcd_data.crc)) // CRC of an LCD8
 		{
 			// added by DerBastler Light On/Off 
-			lcd_configuration_variables.ui8_light_On = ui8_rx_buffer [1] & 128;
-			
-			lcd_configuration_variables.ui8_assist_level = ui8_rx_buffer [1] & 7;
-			
 			// walk assist, see https://endless-sphere.com/forums/viewtopic.php?f=2&t=73471&p=1324745&hilit=kunteng+protocol+hacked#p1109048 
-			if(lcd_configuration_variables.ui8_assist_level == 6)lcd_configuration_variables.ui8_WalkModus_On = 1;
-			else lcd_configuration_variables.ui8_WalkModus_On = 0;
-			
-			lcd_configuration_variables.ui8_max_speed = 10 + ((ui8_rx_buffer [2] & 248) >> 3) | (ui8_rx_buffer [4] & 32);
-			lcd_configuration_variables.ui8_wheel_size = ((ui8_rx_buffer [4] & 192) >> 6) | ((ui8_rx_buffer [2] & 7) << 2);
+			lcd_data.max_speed = 10 + (lcd_data.max_speed_msb << 3 | lcd_data.max_speed_lsb);
+			lcd_data.wheel_size = lcd_data.wheel_size_msb << 2 | lcd_data.wheel_size_lsb;
 
-			if (ui8_rx_buffer[8] == 0) {
+			if (lcd_data.B9 == 0) {
 				ui8_cruiseHasBeenLow = 1;
 			}
-			if (lcd_configuration_variables.ui8_assist_level != (ui8_assistlevel_global & 15)) { //cruise disables when switching assist levels, just like stock
+			if (lcd_data.assist_level != (ui8_assistlevel_global & 15)) { //cruise disables when switching assist levels, just like stock
 				ui8_cruiseThrottleSetting = 0;
 			}
-			else if (ui8_rx_buffer[8] == 16 && lcd_configuration_variables.ui8_assist_level != 0 && ui8_cruiseThrottleSetting == 0 && ui8_cruiseHasBeenLow == 1) {
+			else if (lcd_data.c12 == 16 && lcd_data.assist_level != 0 && ui8_cruiseThrottleSetting == 0 && ui8_cruiseHasBeenLow == 1) {
 				ui8_cruiseHasBeenLow = 0;
 				ui8_cruiseThrottleSetting = ui16_sum_throttle;
 				ui8_cruiseMinThrottle = ui8_cruiseThrottleSetting;
 			}
-
-			lcd_configuration_variables.ui8_p1 = ui8_rx_buffer[3];
-			lcd_configuration_variables.ui8_p2 = ui8_rx_buffer[4] & 0x07;
-			lcd_configuration_variables.ui8_p3 = ui8_rx_buffer[4] & 0x08;
-			lcd_configuration_variables.ui8_p4 = ui8_rx_buffer[4] & 0x10;
-			lcd_configuration_variables.ui8_p5 = ui8_rx_buffer[0];
-
-			lcd_configuration_variables.ui8_c1 = (ui8_rx_buffer[6] & 0x38) >> 3;
-			lcd_configuration_variables.ui8_c2 = (ui8_rx_buffer[6] & 0x37);
-			lcd_configuration_variables.ui8_c4 = (ui8_rx_buffer[8] & 0xE0) >> 5;
-			lcd_configuration_variables.ui8_c5 = (ui8_rx_buffer[7] & 0x0F);
-			lcd_configuration_variables.ui8_c12 = (ui8_rx_buffer[9] & 0x0F);
-			lcd_configuration_variables.ui8_c13 = (ui8_rx_buffer[10] & 0x1C) >> 2;
-			lcd_configuration_variables.ui8_c14 = (ui8_rx_buffer[7] & 0x60) >> 5;
 
 			digestLcdValues();
 			send_message();

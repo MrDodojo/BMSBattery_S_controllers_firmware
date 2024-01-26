@@ -112,7 +112,7 @@ int main(void) {
 	PAS_init();
 	SPEED_init();
 	aca_setpoint_init();
-#if (defined (DISPLAY_TYPE) && defined (DISPLAY_TYPE_KINGMETER)) || defined DISPLAY_TYPE_KT_LCD3 || defined BLUOSEC
+#if (defined (DISPLAY_TYPE) && defined (DISPLAY_TYPE_KINGMETER)) || defined DISPLAY_TYPE_KT_LCD3 || defined BLUOSEC || defined DISPLAY_TYPE_LCD8
 	display_init();
 #endif
 
@@ -138,17 +138,23 @@ int main(void) {
 	for (a = 0; a < NUMBER_OF_PAS_MAGS; a++) {// array init
 		ui16_torque[a] = 0;
 	}
-#ifdef DIAGNOSTICS
+
+#ifdef TT
+	ui16_aca_experimental_flags |= DC_STATIC_ZERO;// | PWM_AUTO_OFF;
+#endif
+#if defined DIAGNOSTICS
+
 	printf("System initialized\r\n");
 #endif
+	uint8_t pts = 0;
 	while (1) {
-
+		pts++;
 		uart_send_if_avail();
 
 		updateSpeeds();
 		updatePasStatus();
 
-#if (defined (DISPLAY_TYPE) && defined (DISPLAY_TYPE_KINGMETER)) || defined DISPLAY_TYPE_KT_LCD3 || defined BLUOSEC
+#if (defined (DISPLAY_TYPE) && defined (DISPLAY_TYPE_KINGMETER)) || defined DISPLAY_TYPE_KT_LCD3 || defined BLUOSEC || defined DISPLAY_TYPE_KT_LCD8
 		display_update();
 #endif
 
@@ -166,7 +172,6 @@ int main(void) {
 			updateLight();
 			ui16_setpoint = (uint16_t) aca_setpoint(ui16_time_ticks_between_pas_interrupt, ui16_setpoint); //update setpoint
 
-			//#define DO_CRUISE_CONTROL 1
 #if DO_CRUISE_CONTROL == 1
 			ui16_setpoint = cruise_control(ui16_setpoint);
 #endif
@@ -196,7 +201,7 @@ int main(void) {
 				}
 
 #ifdef DIAGNOSTICS
-				printf("%u,%u, %u, %u, %u, %u\r\n", ui16_control_state, ui16_setpoint, ui16_motor_speed_erps, ui16_BatteryCurrent, ui16_sum_torque, ui16_momentary_throttle);
+				//printf("%u,%u, %u, %u, %u, %u\r\n", ui16_control_state, ui16_setpoint, ui16_motor_speed_erps, ui16_BatteryCurrent, ui16_sum_torque, ui16_momentary_throttle);
 
 				//printf("erps %d, motorstate %d, cyclecountertotal %d\r\n", ui16_motor_speed_erps, ui8_possible_motor_state|ui8_dynamic_motor_state, ui16_PWM_cycles_counter_total);
 
@@ -211,15 +216,70 @@ int main(void) {
 				putchar(ui8_position_correction_value);
 				putchar(255);*/
 				// printf("%d, %d, %d, %d, %d, %d\r\n", (uint16_t) uint8_t_hall_case[0], (uint16_t)uint8_t_hall_case[1],(uint16_t) uint8_t_hall_case[2],(uint16_t) uint8_t_hall_case[3], (uint16_t)uint8_t_hall_case[4], (uint16_t)uint8_t_hall_case[5]);
-				//printf("%d, %d, %d, %d, %d, %d, %d,\r\n", ui8_position_correction_value, ui16_BatteryCurrent, ui16_setpoint, ui8_regen_throttle, ui16_motor_speed_erps, ui16_ADC_iq_current>>2,ui16_adc_read_battery_voltage());
+				printf("%d, %d, %d, %d, %d, %d, %d,\r\n", ui8_position_correction_value, ui16_BatteryCurrent, ui16_setpoint, ui16_motor_speed_erps, ui16_ADC_iq_current>>2,ui16_adc_read_battery_voltage());
 
 
-				//printf("correction angle %d, Current %d, Voltage %d, sumtorque %d, setpoint %d, km/h %lu\n",ui8_position_correction_value, i16_deziAmps, ui8_BatteryVoltage, ui16_sum_throttle, ui16_setpoint, ui32_speed_sensor_rpks);
+				printf("correction angle %d, Current %d, Voltage %d, sumtorque %d, setpoint %d, km/h %lu\n",ui8_position_correction_value, i16_deziAmps, ui8_BatteryVoltage, ui16_sum_throttle, ui16_setpoint, ui32_speed_sensor_rpks);
 #endif
 			}//end of very slow loop
 
 
 		}// end of slow loop
+		 //
+#ifdef TT
+		if (pts > 5) {
+			pts = 0;
+			uint8_t crc = 4; // randomly chosen with a true die
+				uart_put_buffered(0xAA);
+				uart_put_buffered(0x55);
+				uart_put_buffered(0xAA);
+				uart_put_buffered(0x55);
+
+				crc ^= 0xAA;
+				crc ^= 0x55;
+				crc ^= 0xAA;
+				crc ^= 0x55;
+
+				//uint16_t cu = ui16_adc_read_phase_B_current();
+				//crc ^= cu >> 8; crc ^= cu & 0xFF;
+				//uart_put_buffered(ui8_position_correction_value);
+				/*uart_put_buffered(ui16_ADC_iq_current >> 8);
+				uart_put_buffered(ui16_ADC_iq_current  & 0xFF);*/
+				//uart_put_buffered(cu >> 8);
+				//uart_put_buffered(cu & 0xFF);
+				/*uart_put_buffered(ui16_momentary_throttle >> 8);
+				uart_put_buffered(ui16_momentary_throttle & 0xff);
+				uart_put_buffered(uint32_current_target >> 8);
+				uart_put_buffered(uint32_current_target & 0xFF);
+				uart_put_buffered(ui16_time_ticks_between_pas_interrupt_smoothed >> 8);
+				uart_put_buffered(ui16_time_ticks_between_pas_interrupt_smoothed & 0xFF);
+				uart_put_buffered(ui16_motor_speed_erps >> 8);
+				uart_put_buffered(ui16_motor_speed_erps & 0xFF);*/
+				/*for (int i = 0; i < 6; i++) {
+					uart_put_buffered(uint8_t_60deg_pwm_cycles[i]);
+					crc ^= uint8_t_60deg_pwm_cycles[i];
+				}
+				for (int i = 0; i < 6; i++) {
+					uart_put_buffered(uint8_t_hall_order[i]);
+					crc ^= uint8_t_hall_order[i];
+				}
+				for (int i = 0; i < 6; i++) {
+					uart_put_buffered(uint8_t_hall_case[i]);
+					crc ^= uint8_t_hall_case[i];
+				}*/
+				uart_put_buffered(current_hall);
+				crc ^= current_hall;
+				uart_put_buffered(crc);
+/*				uart_put_buffered(ui8_s_hall_angle4_0);
+				uart_put_buffered(ui8_s_hall_angle6_60);
+				uart_put_buffered(ui8_s_hall_angle2_120);
+				uart_put_buffered(ui8_s_hall_angle3_180);
+				uart_put_buffered(ui8_s_hall_angle1_240);
+				uart_put_buffered(ui8_s_hall_angle5_300);
+				uart_put_buffered(float2int(flt_s_motor_constant, 4.0));*/
+				uart_send_if_avail();
+		}
+#endif
 	}// end of while(1) loop
 }
 

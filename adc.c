@@ -104,23 +104,27 @@ uint8_t ui8_adc_read_phase_B_current(void) {
     //#define ADC1_BaseAddress        0x53E0
     //phase_B_current --> ADC_AIN5
     // 0x53E0 + 2*5 = 0x53EA
-    return *(uint8_t*) (0x53EA);
+    uint8_t val = *(uint8_t*) (0x53EA);
+    return val;
 }
 
 uint16_t ui16_adc_read_phase_B_current(void) {
-    uint16_t temph;
-    uint8_t templ;
+    uint16_t val;
 
-    templ = *(uint8_t*) (0x53EB);
-    temph = *(uint8_t*) (0x53EA);
+    val = (uint16_t)  (*(uint8_t*) (0x53EA) << 2) + *(uint8_t*) (0x53EB);
 
-    return ((uint16_t) temph) << 2 | ((uint16_t) templ);
+#ifdef TT
+    //printf("BCUR %04X %d\n", val, 512 - val); // 10bit 2's complement
+#endif
+    //return ((uint16_t) temph) << 2 | ((uint16_t) templ);
+    return (uint16_t) val;
 }
 
 uint8_t ui8_adc_read_throttle(void) {
     // 0x53E0 + 2*4 = 0x53E8
     //  return *(uint8_t*)(0x53E8);
-    return *(uint8_t*) (0x53E8);
+    uint8_t val = *(uint8_t*) (0x53E8);
+    return val;
 }
 
 uint16_t ui16_adc_read_x4_value(void) {
@@ -145,7 +149,10 @@ uint16_t ui16_adc_read_motor_total_current(void) {
 
     templ = *(uint8_t*) (0x53F1);
     temph = *(uint8_t*) (0x53F0);
-
+    uint16_t val = ((uint16_t) temph) << 2 | ((uint16_t) templ);
+#ifdef TT
+    //printf("TCUR %d\n", val);
+#endif
     return ((uint16_t) temph) << 2 | ((uint16_t) templ);
 }
 

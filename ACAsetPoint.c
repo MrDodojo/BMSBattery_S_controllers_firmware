@@ -108,6 +108,8 @@ uint16_t aca_setpoint(uint16_t ui16_time_ticks_between_pas_interrupt, uint16_t s
 	// first select current speed limit
 	if (ui8_offroad_state == 255) {
 		ui8_speedlimit_actual_kph = 80;
+	} else if (ui8_walk_assist) {
+		ui8_speedlimit_actual_kph = WALK_ASSIST_SPEED_LIMIT;
 	} else if (ui8_offroad_state > 15 && ui16_sum_throttle <= 2) { // allow a slight increase based on ui8_offroad_state
 		ui8_speedlimit_actual_kph = ui8_speedlimit_kph + (ui8_offroad_state - 16);
 	} else if (ui8_offroad_state > 15 && ui16_sum_throttle > 2) {
@@ -117,7 +119,6 @@ uint16_t aca_setpoint(uint16_t ui16_time_ticks_between_pas_interrupt, uint16_t s
 	} else {
 		ui8_speedlimit_actual_kph = ui8_speedlimit_kph;
 	}
-
 	// >=8 means levels are switched of, use wanted percentage directly instead
 	ui16_assist_percent_smoothed -= ui16_assist_percent_smoothed >> 4;
 	if ((ui8_assistlevel_global & 15) < 8) {
@@ -327,25 +328,25 @@ uint16_t aca_setpoint(uint16_t ui16_time_ticks_between_pas_interrupt, uint16_t s
 			controll_state_temp += 128;
 		}
 		
-		
-		
+			
 		if ((ui16_aca_experimental_flags & DC_STATIC_ZERO) == DC_STATIC_ZERO) {
 			ui32_dutycycle = 0;
 			controll_state_temp += 256;
 		}else if (!checkUnderVoltageOverride() && !checkMaxErpsOverride()){
 
-			if (ui8_walk_assist) uint32_current_target = 10 + ui16_current_cal_b;
-
-			// control power instead of current
-			if ((ui16_aca_flags & POWER_BASED_CONTROL) == POWER_BASED_CONTROL) {
-				// nominal voltage based on limits
-				ui8_temp = ((ui8_s_battery_voltage_max - ui8_s_battery_voltage_min) >> 1) + ui8_s_battery_voltage_min;
-				//uint32_current_target*=ui8_temp/ui8_BatteryVoltage;
-				if (ui8_moving_indication & 16 == 16) {
-					uint32_current_target -= ui16_current_cal_b;
-					uint32_current_target *= ui8_temp; // or nominal voltage at which you want to calculate the power target
-					uint32_current_target /= ui8_BatteryVoltage;
-					uint32_current_target += ui16_current_cal_b;
+			if (ui8_walk_assist) uint32_current_target = (WALK_ASSIST_CURRENT_TARGET) + ui16_current_cal_b;
+			else {
+				// control power instead of current
+				if ((ui16_aca_flags & POWER_BASED_CONTROL) == POWER_BASED_CONTROL) {
+					// nominal voltage based on limits
+					ui8_temp = ((ui8_s_battery_voltage_max - ui8_s_battery_voltage_min) >> 1) + ui8_s_battery_voltage_min;
+					//uint32_current_target*=ui8_temp/ui8_BatteryVoltage;
+					if (ui8_moving_indication & 16 == 16) {
+						uint32_current_target -= ui16_current_cal_b;
+						uint32_current_target *= ui8_temp; // or nominal voltage at which you want to calculate the power target
+						uint32_current_target /= ui8_BatteryVoltage;
+						uint32_current_target += ui16_current_cal_b;
+					}
 				}
 			}
 

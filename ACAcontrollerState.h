@@ -63,6 +63,7 @@ extern uint8_t ui8_position_correction_value;
 extern uint8_t ui8_correction_at_angle;
 extern uint16_t ui16_ADC_iq_current;
 extern uint16_t ui16_ADC_iq_current_filtered;
+extern uint16_t ui16_ADC_iq_current_accumulated;
 extern uint8_t ui8_speedlimit_kph;
 extern uint8_t ui8_speedlimit_without_pas_kph;
 extern uint8_t ui8_speedlimit_actual_kph;
@@ -79,6 +80,7 @@ extern uint8_t uint8_t_60deg_pwm_cycles[6];
 extern uint8_t uint8_t_hall_case[7];
 extern uint8_t uint8_t_hall_order[6];
 extern int8_t int8_t_hall_counter;
+extern uint8_t current_hall;
 extern uint8_t ui8_hall_debug_counter;
 extern uint8_t ui8_hall_order_counter;
 
