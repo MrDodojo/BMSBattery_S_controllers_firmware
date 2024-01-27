@@ -18,16 +18,32 @@
 #define MOTOR_STATE_RUNNING_INTERPOLATION_60 2
 #define MOTOR_STATE_RUNNING_INTERPOLATION_360 3
 
+// external for PWM (TIM1 isr context)
 extern uint8_t ui8_sinetable_position;
-extern uint16_t ui16_speed_inverse;
+
+// external for debug only (and the BOdisplay... now there's an acronym.)
 extern uint16_t ui16_PWM_cycles_counter_total;
-extern uint16_t ui16_iq_current_ma;
-extern uint16_t ui16_log;
+extern uint16_t ui16_ADC_iq_current;
+extern uint8_t ui8_possible_motor_state;
+extern uint8_t ui8_dynamic_motor_state;
+extern uint8_t ui8_position_correction_value;
+extern uint8_t uint8_t_60deg_pwm_cycles[6];
+extern uint8_t uint8_t_hall_case[7];
 
 
 void hall_sensor_init (void);
 void hall_sensors_read_and_action (void);
 void motor_fast_loop (void);
 void watchdog_init (void);
+
+// slow loop before setpoint
+void motor_slow_update_pre(void);
+// slow loop after setpoint
+void motor_slow_update_post(void);
+
+// written by reverse control (cruise_control.c, for now),
+// used by fast ISR in motor.c
+extern volatile uint8_t motor_direction_reverse;
+
 
 #endif /* _MOTOR_H_ */

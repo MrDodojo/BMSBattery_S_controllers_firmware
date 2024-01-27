@@ -32,6 +32,7 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301  USA
 #include "interrupts.h"
 #include "ACAcontrollerState.h"
 
+extern uint8_t pwm_swap_phases;
 #ifdef DISPLAY_TYPE_KT_LCD8
 display_view_type display_view;
 display_mode_type display_mode; //currently display mode
@@ -194,10 +195,12 @@ typedef enum {
 	PWM_AUTO_OFF = ((uint16_t) 1024),
 			
 } ACA_EXPERIMENTAL_FLAGS;*/
+    uint16_t old_experimental = ui16_aca_experimental_flags;
+    uint16_t old_aca = ui16_aca_flags;
 
 	ui8_s_motor_angle = lcd_data.p1;	
 	
-	if (lcd_data.p2) {
+	if (lcd_data.c14) { // can be >1 but all set value
 		ui16_aca_experimental_flags |= AVOID_MOTOR_CYCLES_JITTER;
 	} else {
 		ui16_aca_experimental_flags &= ~AVOID_MOTOR_CYCLES_JITTER;
@@ -244,6 +247,18 @@ typedef enum {
 	} else {
 		ui16_aca_flags &= ~ASSIST_LVL_AFFECTS_THROTTLE;
 	}
+
+    pwm_swap_phases = lcd_data.c14; // alows live swapping of 
+                                   // phases to test motors
+    if (ui16_aca_flags != old_aca) {
+		eeprom_write(OFFSET_ACA_FLAGS_HIGH_BYTE, (ui16_aca_flags >> 8)& 0xFF);
+		eeprom_write(OFFSET_ACA_FLAGS, ui16_aca_flags & 0xFF);
+    }
+
+    if (ui16_aca_experimental_flags != old_experimental) {
+		eeprom_write(OFFSET_ACA_EXPERIMENTAL_FLAGS_HIGH_BYTE, (ui16_aca_experimental_flags >> 8)& 0xFF);
+		eeprom_write(OFFSET_ACA_EXPERIMENTAL_FLAGS, ui16_aca_experimental_flags & 0xFF);
+    }
 }
 
 // see if we have a received package to be processed

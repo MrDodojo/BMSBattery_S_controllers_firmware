@@ -63,8 +63,7 @@ void PI_control_jump(uint8_t dc) {
        float_i = dc;
 }
 
-uint8_t PI_control(uint16_t pv, uint16_t setpoint, uint8_t uint_PWM_Enable) {
-    float dc;
+int32_t PI_control(uint16_t pv, uint16_t setpoint, uint8_t uint_PWM_Enable) {
 //uint32_t PI_control(uint16_t pv, uint16_t setpoint, uint8_t uint_PWM_Enable) {
 	float float_p;
 	static float float_i;
@@ -72,13 +71,13 @@ uint8_t PI_control(uint16_t pv, uint16_t setpoint, uint8_t uint_PWM_Enable) {
 	float_p = ((float) setpoint - (float) pv) * flt_s_pid_gain_p;
 	float_i += ((float) setpoint - (float) pv) * flt_s_pid_gain_i;
 	
-	if (float_i > 255)float_i = 255;
-	if (float_i < 0)float_i = 0;
+	if (float_i > 255) float_i = 255;
+	if (float_i < 0) float_i = 0;
 	
 	if (!uint_PWM_Enable && ((ui16_aca_experimental_flags & PWM_AUTO_OFF) == PWM_AUTO_OFF)) {
 		float_i = ui32_erps_filtered * flt_s_motor_constant - float_p;
 	}
-	
+
 	if (float_p + float_i > float_dc + 5) {
 		float_dc += 5;
 	} else if (float_p + float_i < float_dc - 5) {
@@ -86,11 +85,11 @@ uint8_t PI_control(uint16_t pv, uint16_t setpoint, uint8_t uint_PWM_Enable) {
 	} else {
 		float_dc = float_p + float_i;
 	}
-	
+
 	if (float_dc > 255)float_dc = 255;
 	if (float_dc < 0)float_dc = 0;
 
-	return ((uint32_t) (float_dc));
+	return ((uint8_t) (float_dc));
 }
 
 void updateSpeeds(void) {
@@ -160,7 +159,7 @@ void initErpsRatio(void) {
 	//if (readAndClearSignal(SIGNAL_SPEEDLIMIT_CHANGED) == 1) 
 	ui16_speed_kph_to_erps_ratio = (uint16_t) ((float) ui8_gear_ratio * 1000000.0 / ((float) wheel_circumference * 36.0));
 }
-uint8_t hall_debounce = 0;
+
 void updateHallOrder(uint8_t hall_sensors) {
 	
 	if (++ui8_hall_order_counter > 5) {

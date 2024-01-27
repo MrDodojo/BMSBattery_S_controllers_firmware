@@ -332,7 +332,7 @@ uint16_t aca_setpoint(uint16_t ui16_time_ticks_between_pas_interrupt, uint16_t s
 		if ((ui16_aca_experimental_flags & DC_STATIC_ZERO) == DC_STATIC_ZERO) {
 			ui32_dutycycle = 0;
 			controll_state_temp += 256;
-		}else if (!checkUnderVoltageOverride() && !checkMaxErpsOverride()){
+		} else if (!checkUnderVoltageOverride() && !checkMaxErpsOverride()){
 
 			if (ui8_walk_assist) uint32_current_target = (WALK_ASSIST_CURRENT_TARGET) + ui16_current_cal_b;
 			else {

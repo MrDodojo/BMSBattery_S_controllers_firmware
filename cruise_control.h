@@ -1,8 +1,4 @@
 /*
- * EGG OpenSource EBike firmware
- *
- * Copyright (C) Casainho, 2015, 2106, 2017.
- *
  * Released under the GPL License, Version 3
  */
 
@@ -10,10 +6,19 @@
 #define _CRUISE_CONTROL_H
 
 #include "main.h"
+void cruise_control_init(void);
+uint16_t cruise_control_throttle(uint16_t erps);
 
-//uint8_t cruise_control (uint8_t ui8_value);
-uint8_t cruise_control (uint8_t ui8_value);
-void set_cruise_control_state (uint8_t value);
+void enable_cruise_control(uint16_t erps);
 void stop_cruise_control (void);
+void cruise_control_update(void);
+uint8_t cruise_control_enabled(void);
+
+
+uint8_t cruise_control_regen(uint16_t erps);
+
+// flags for debug from the cruise controller
+extern uint16_t cruise_status_flags;
+extern int16_t cruise_last_delta;
 
 #endif /* _CRUISE_CONTROL_H */

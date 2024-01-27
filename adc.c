@@ -96,6 +96,8 @@ inline void adc_trigger(void) //inline ?!
     ADC1_StartConversion();
 }
 
+#define READ_MMIO_U8(x) *(volatile uint8_t*)(x)
+
 uint8_t ui8_adc_read_phase_B_current(void) {
     //  /* Read LSB first */
     //  templ = *(uint8_t*)(uint16_t)((uint16_t)ADC1_BaseAddress + (uint8_t)(Buffer << 1) + 1);
@@ -104,35 +106,31 @@ uint8_t ui8_adc_read_phase_B_current(void) {
     //#define ADC1_BaseAddress        0x53E0
     //phase_B_current --> ADC_AIN5
     // 0x53E0 + 2*5 = 0x53EA
-    uint8_t val = *(uint8_t*) (0x53EA);
-    return val;
+    return READ_MMIO_U8(0x53EA);
 }
 
 uint16_t ui16_adc_read_phase_B_current(void) {
-    uint16_t val;
+    uint16_t temph;
+    uint8_t templ;
 
-    val = (uint16_t)  (*(uint8_t*) (0x53EA) << 2) + *(uint8_t*) (0x53EB);
+    templ = READ_MMIO_U8(0x53EB);
+    temph = READ_MMIO_U8(0x53EA);
 
-#ifdef TT
-    //printf("BCUR %04X %d\n", val, 512 - val); // 10bit 2's complement
-#endif
-    //return ((uint16_t) temph) << 2 | ((uint16_t) templ);
-    return (uint16_t) val;
+    return ((uint16_t) temph) << 2 | ((uint16_t) templ);
 }
 
 uint8_t ui8_adc_read_throttle(void) {
     // 0x53E0 + 2*4 = 0x53E8
     //  return *(uint8_t*)(0x53E8);
-    uint8_t val = *(uint8_t*) (0x53E8);
-    return val;
+    return READ_MMIO_U8(0x53E8);
 }
 
 uint16_t ui16_adc_read_x4_value(void) {
     uint16_t temph;
     uint8_t templ;
 
-    templ = *(uint8_t*) (0x53EF);
-    temph = *(uint8_t*) (0x53EE);
+    templ = READ_MMIO_U8(0x53EF);
+    temph = READ_MMIO_U8(0x53EE);
 
     return ((uint16_t) temph) << 2 | ((uint16_t) templ);
 
@@ -140,33 +138,31 @@ uint16_t ui16_adc_read_x4_value(void) {
 
 uint8_t ui8_adc_read_motor_total_current(void) {
     // 0x53E0 + 2*8 = 0x53F0
-    return *(uint8_t*) (0x53F0);
+    return READ_MMIO_U8(0x53F0);
 }
 
 uint16_t ui16_adc_read_motor_total_current(void) {
     uint16_t temph;
     uint8_t templ;
 
-    templ = *(uint8_t*) (0x53F1);
-    temph = *(uint8_t*) (0x53F0);
-    uint16_t val = ((uint16_t) temph) << 2 | ((uint16_t) templ);
-#ifdef TT
-    //printf("TCUR %d\n", val);
-#endif
+    templ = READ_MMIO_U8(0x53F1);
+    temph = READ_MMIO_U8(0x53F0);
+
     return ((uint16_t) temph) << 2 | ((uint16_t) templ);
 }
 
 uint8_t ui8_adc_read_battery_voltage(void) {
     // 0x53E0 + 2*9 = 0x53F2
-    return *(uint8_t*) (0x53F2);
+    return READ_MMIO_U8(0x53F2);
 }
 
 uint16_t ui16_adc_read_battery_voltage(void) {
     uint16_t temph;
     uint8_t templ;
 
-    templ = *(uint8_t*) (0x53F3);
-    temph = *(uint8_t*) (0x53F2);
+    templ = READ_MMIO_U8(0x53F3);
+    temph = READ_MMIO_U8(0x53F2);
+    temph = READ_MMIO_U8(0x53F2);
 
     return ((uint16_t) temph) << 2 | ((uint16_t) templ);
 }

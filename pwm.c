@@ -28,7 +28,12 @@ uint8_t ui8_duty_cycle_target = 0;
 uint8_t ui8_value_new_A;
 uint8_t ui8_value_new_B;
 uint8_t ui8_value_new_C;
+uint8_t ui8_value_A;
+uint8_t ui8_value_B;
+uint8_t ui8_value_C;
 uint16_t ui16_value;
+
+uint8_t pwm_swap_phases = SWAP_PHASES_DEFAULT;
 
 void pwm_set_duty_cycle(uint8_t value) {
 	ui8_duty_cycle_target = value;
@@ -217,29 +222,97 @@ void pwm_apply_duty_cycle(uint8_t ui8_duty_cycle_value) {
 	}
 
 	// set final duty_cycle value
-	TIM1_SetCompare1((uint16_t) (ui8_value_new_C << 1));
-	TIM1_SetCompare2((uint16_t) (ui8_value_new_B << 1));
-	TIM1_SetCompare3((uint16_t) (ui8_value_new_A << 1));
+    switch (pwm_swap_phases) {
+        /*
+         * 123, 132, 213, 321, 231, 321
+         */
+        deflaut:
+        case 0:
+        case 1:
+            TIM1_SetCompare1((uint16_t) (ui8_value_new_C << 1));
+            TIM1_SetCompare2((uint16_t) (ui8_value_new_B << 1));
+            TIM1_SetCompare3((uint16_t) (ui8_value_new_A << 1));
+            break;
+        case 2:
+            TIM1_SetCompare1((uint16_t) (ui8_value_new_C << 1));
+            TIM1_SetCompare3((uint16_t) (ui8_value_new_B << 1));
+            TIM1_SetCompare2((uint16_t) (ui8_value_new_A << 1));
+            break;
+        case 3:
+            TIM1_SetCompare2((uint16_t) (ui8_value_new_C << 1));
+            TIM1_SetCompare1((uint16_t) (ui8_value_new_B << 1));
+            TIM1_SetCompare3((uint16_t) (ui8_value_new_A << 1));
+            break;
+        case 4:
+            TIM1_SetCompare3((uint16_t) (ui8_value_new_C << 1));
+            TIM1_SetCompare2((uint16_t) (ui8_value_new_B << 1));
+            TIM1_SetCompare1((uint16_t) (ui8_value_new_A << 1));
+            break;
+        case 5:
+            TIM1_SetCompare2((uint16_t) (ui8_value_new_C << 1));
+            TIM1_SetCompare3((uint16_t) (ui8_value_new_B << 1));
+            TIM1_SetCompare1((uint16_t) (ui8_value_new_A << 1));
+            break;
+        case 6:
+            TIM1_SetCompare3((uint16_t) (ui8_value_new_C << 1));
+            TIM1_SetCompare2((uint16_t) (ui8_value_new_B << 1));
+            TIM1_SetCompare1((uint16_t) (ui8_value_new_A << 1));
+            break;
+    }
 #elif (SVM_TABLE == SINE) || (SVM_TABLE == SINE_SVM_ORIGINAL)
 	// scale and apply _duty_cycle
-	ui8_value_a = fetch_table_value(ui8_sinetable_position);
-	ui16_value = (uint16_t) (ui8_value_a * ui8_duty_cycle_value);
-	ui8_value_a = (uint8_t) (ui16_value >> 8);
+	ui8_value_A = fetch_table_value(ui8_sinetable_position);
+	ui16_value = (uint16_t) (ui8_value_A * ui8_duty_cycle_value);
+	ui8_value_A = (uint8_t) (ui16_value >> 8);
 
 	// add 120 degrees and limit
-	ui8_value_b = fetch_table_value((uint8_t) (ui8_sinetable_position + 85 /* 120º */));
-	ui16_value = (uint16_t) (ui8_value_b * ui8_duty_cycle_value);
-	ui8_value_b = (uint8_t) (ui16_value >> 8);
+	ui8_value_B = fetch_table_value((uint8_t) (ui8_sinetable_position + 85 /* 120º */));
+	ui16_value = (uint16_t) (ui8_value_B * ui8_duty_cycle_value);
+	ui8_value_B = (uint8_t) (ui16_value >> 8);
 
 	// subtract 120 degrees and limit
-	ui8_value_c = fetch_table_value((uint8_t) (ui8_sinetable_position + 171 /* 240º */);
-	ui16_value = (uint16_t) (ui8_value_c * ui8_duty_cycle_value);
-	ui8_value_c = (uint8_t) (ui16_value >> 8);
+	ui8_value_C = fetch_table_value((uint8_t) (ui8_sinetable_position + 171 /* 240º */));
+	ui16_value = (uint16_t) (ui8_value_C * ui8_duty_cycle_value);
+	ui8_value_C = (uint8_t) (ui16_value >> 8);
 
 	// set final duty_cycle value
-	TIM1_SetCompare1((uint16_t) (ui8_value_a << 2));
-	TIM1_SetCompare2((uint16_t) (ui8_value_c << 2));
-	TIM1_SetCompare3((uint16_t) (ui8_value_b << 2));
+    switch (pwm_swap_phases) {
+        /*
+         * 123, 132, 213, 321, 231, 321
+         */
+        deflaut:
+        case 0:
+        case 1:
+            TIM1_SetCompare1((uint16_t) (ui8_value_C << 2));
+            TIM1_SetCompare2((uint16_t) (ui8_value_B << 2));
+            TIM1_SetCompare3((uint16_t) (ui8_value_A << 2));
+            break;
+        case 2:
+            TIM1_SetCompare1((uint16_t) (ui8_value_C << 2));
+            TIM1_SetCompare3((uint16_t) (ui8_value_B << 2));
+            TIM1_SetCompare2((uint16_t) (ui8_value_A << 2));
+            break;
+        case 3:
+            TIM1_SetCompare2((uint16_t) (ui8_value_C << 2));
+            TIM1_SetCompare1((uint16_t) (ui8_value_B << 2));
+            TIM1_SetCompare3((uint16_t) (ui8_value_A << 2));
+            break;
+        case 4:
+            TIM1_SetCompare3((uint16_t) (ui8_value_C << 2));
+            TIM1_SetCompare2((uint16_t) (ui8_value_B << 2));
+            TIM1_SetCompare1((uint16_t) (ui8_value_A << 2));
+            break;
+        case 5:
+            TIM1_SetCompare2((uint16_t) (ui8_value_C << 2));
+            TIM1_SetCompare3((uint16_t) (ui8_value_B << 2));
+            TIM1_SetCompare1((uint16_t) (ui8_value_A << 2));
+            break;
+        case 6:
+            TIM1_SetCompare3((uint16_t) (ui8_value_C << 2));
+            TIM1_SetCompare2((uint16_t) (ui8_value_B << 2));
+            TIM1_SetCompare1((uint16_t) (ui8_value_A << 2));
+            break;
+    }
 #endif
 }
 
