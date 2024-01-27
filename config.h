@@ -66,10 +66,10 @@
  * pick one
  */
 
-//#define DISPLAY_TYPE_KT_LCD8
+#define DISPLAY_TYPE_KT_LCD8
 //#define DISPLAY_TYPE_KT_LCD3
 //#define DIAGNOSTICS
 //#define BLUOSEC
-#define TT
+//#define TT
 //
 #endif /* CONFIG_H_ */
