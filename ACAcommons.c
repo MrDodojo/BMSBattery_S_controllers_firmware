@@ -57,8 +57,15 @@ int32_t map(int32_t x, int32_t in_min, int32_t in_max, int32_t out_min, int32_t 
 	else
 		return (x - in_min) * (out_max - out_min) / (in_max - in_min) + out_min;
 }
+static float float_i;
 
-uint32_t PI_control(uint16_t pv, uint16_t setpoint, uint8_t uint_PWM_Enable) {
+void PI_control_jump(uint8_t dc) {
+       float_i = dc;
+}
+
+uint8_t PI_control(uint16_t pv, uint16_t setpoint, uint8_t uint_PWM_Enable) {
+    float dc;
+//uint32_t PI_control(uint16_t pv, uint16_t setpoint, uint8_t uint_PWM_Enable) {
 	float float_p;
 	static float float_i;
 	static float float_dc = 0;
