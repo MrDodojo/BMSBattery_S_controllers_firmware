@@ -59,7 +59,7 @@ volatile uint8_t motor_direction_reverse;
 #define HALL_REMAP(x) ((x&1) | ((x&2)<<1) | ((x&4) >> 1))
 
 void TIM1_UPD_OVF_TRG_BRK_IRQHandler(void) __interrupt(TIM1_UPD_OVF_TRG_BRK_IRQHANDLER) {
-    disableInterrupts();
+//    disableInterrupts();
 	adc_trigger();
 	hall_sensors_read_and_action();
 
@@ -67,7 +67,7 @@ void TIM1_UPD_OVF_TRG_BRK_IRQHandler(void) __interrupt(TIM1_UPD_OVF_TRG_BRK_IRQH
 
 	// clear the interrupt pending bit for TIM1
 	TIM1_ClearITPendingBit(TIM1_IT_UPDATE);
-    enableInterrupts();
+//    enableInterrupts();
 }
 
 void hall_sensor_init(void) {
@@ -83,7 +83,7 @@ void hall_sensors_read_and_action(void) {
 	if ((hs != hall_sensors_last_raw) || (ui8_possible_motor_state == MOTOR_STATE_COAST)) // let's run the code when motor is stopped/coast so it can pick right motor position for correct startup
 	{
 		hall_sensors_last_raw = hs;
-		hall_sensors = HALL_REMAP(hs);
+		hall_sensors = hs;
 		if (hall_sensors_last >0 && hall_sensors_last < 7) {
 			uint8_t_60deg_pwm_cycles[hall_sensors_last-1] = ui16_PWM_cycles_counter_6;
 		}

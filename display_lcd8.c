@@ -31,6 +31,7 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301  USA
 #include "ACAeeprom.h"
 #include "interrupts.h"
 #include "ACAcontrollerState.h"
+#include "pwm.h"
 
 extern uint8_t pwm_swap_phases;
 #ifdef DISPLAY_TYPE_KT_LCD8
@@ -248,8 +249,12 @@ typedef enum {
 		ui16_aca_flags &= ~ASSIST_LVL_AFFECTS_THROTTLE;
 	}
 
-    pwm_swap_phases = lcd_data.c14; // alows live swapping of 
-                                   // phases to test motors
+    if (pwm_swap_phases != lcd_data.p2) {
+        pwm_swap_phases = lcd_data.p2; // alows live swapping of 
+                                       // phases to test motors
+
+        pwm_duty_cycle_controller();
+    }
     if (ui16_aca_flags != old_aca) {
 		eeprom_write(OFFSET_ACA_FLAGS_HIGH_BYTE, (ui16_aca_flags >> 8)& 0xFF);
 		eeprom_write(OFFSET_ACA_FLAGS, ui16_aca_flags & 0xFF);

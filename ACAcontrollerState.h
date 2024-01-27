@@ -143,6 +143,8 @@ extern uint8_t ui8_moving_indication;
 extern uint8_t ui8_cruiseThrottleSetting;
 extern uint8_t ui8_cruiseMinThrottle;
 
+extern uint8_t pwm_swap_phases;
+
 void controllerstate_init(void);
 
 typedef enum {

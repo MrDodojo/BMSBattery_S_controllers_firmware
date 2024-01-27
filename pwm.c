@@ -33,13 +33,14 @@ uint8_t ui8_value_B;
 uint8_t ui8_value_C;
 uint16_t ui16_value;
 
-uint8_t pwm_swap_phases = SWAP_PHASES_DEFAULT;
+uint8_t pwm_swap_phases;
 
 void pwm_set_duty_cycle(uint8_t value) {
 	ui8_duty_cycle_target = value;
 }
 
 void pwm_init(void) {
+    pwm_swap_phases = SWAP_PHASES_DEFAULT;
 	// TIM1 Peripheral Configuration
 	TIM1_DeInit();
 

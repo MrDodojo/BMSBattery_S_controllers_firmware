@@ -36,7 +36,7 @@
 
 //uint16_t ui16_LPF_angle_adjust = 0;
 //uint16_t ui16_LPF_angle_adjust_temp = 0;
-
+extern int8_t hall_sensors;
 uint16_t ui16_log1 = 0;
 uint8_t ui8_slowloop_flag = 0;
 uint8_t ui8_veryslowloop_counter = 0;
@@ -145,16 +145,17 @@ int main(void) {
 #if defined DIAGNOSTICS
 
 	printf("System initialized\r\n");
+
 #endif
-	uint8_t pts = 0;
 	while (1) {
-		pts++;
 		uart_send_if_avail();
 
 		updateSpeeds();
 		updatePasStatus();
 
 #if (defined (DISPLAY_TYPE) && defined (DISPLAY_TYPE_KINGMETER)) || defined DISPLAY_TYPE_KT_LCD3 || defined BLUOSEC || defined DISPLAY_TYPE_KT_LCD8
+
+        i8_motor_temperature = pwm_swap_phases;
 		display_update();
 #endif
 
@@ -163,7 +164,7 @@ int main(void) {
 
 			ui8_slowloop_flag = 0; //reset flag for slow loop
 			ui8_veryslowloop_counter++; // increase counter for very slow loop
-    
+#ifndef TT    
             motor_slow_update_pre();
 			checkPasInActivity();
 			updateRequestedTorque(); //now calculates tq for sensor as well
@@ -172,14 +173,13 @@ int main(void) {
 			updateLight();
 
 			ui16_setpoint = (uint16_t) aca_setpoint(ui16_time_ticks_between_pas_interrupt, ui16_setpoint); //update setpoint
-            i8_motor_temperature = (0xff & (ui16_setpoint >> 2));
 /* #if DO_CRUISE_CONTROL == 1 */
 /* 			ui16_setpoint = cruise_control(ui16_setpoint); */
 /* #endif */
 
 			pwm_set_duty_cycle((uint8_t) ui16_setpoint);
             motor_slow_update_post();
-
+#endif
 			
 			/****************************************************************************/
 			//very slow loop for communication
@@ -225,60 +225,6 @@ int main(void) {
 		}// end of slow loop
 		 //
         wfi();
-#ifdef TT
-		if (pts > 5) {
-			pts = 0;
-			uint8_t crc = 4; // randomly chosen with a true die
-				uart_put_buffered(0xAA);
-				uart_put_buffered(0x55);
-				uart_put_buffered(0xAA);
-				uart_put_buffered(0x55);
-
-				crc ^= 0xAA;
-				crc ^= 0x55;
-				crc ^= 0xAA;
-				crc ^= 0x55;
-
-				//uint16_t cu = ui16_adc_read_phase_B_current();
-				//crc ^= cu >> 8; crc ^= cu & 0xFF;
-				//uart_put_buffered(ui8_position_correction_value);
-				/*uart_put_buffered(ui16_ADC_iq_current >> 8);
-				uart_put_buffered(ui16_ADC_iq_current  & 0xFF);*/
-				//uart_put_buffered(cu >> 8);
-				//uart_put_buffered(cu & 0xFF);
-				/*uart_put_buffered(ui16_momentary_throttle >> 8);
-				uart_put_buffered(ui16_momentary_throttle & 0xff);
-				uart_put_buffered(uint32_current_target >> 8);
-				uart_put_buffered(uint32_current_target & 0xFF);
-				uart_put_buffered(ui16_time_ticks_between_pas_interrupt_smoothed >> 8);
-				uart_put_buffered(ui16_time_ticks_between_pas_interrupt_smoothed & 0xFF);
-				uart_put_buffered(ui16_motor_speed_erps >> 8);
-				uart_put_buffered(ui16_motor_speed_erps & 0xFF);*/
-				/*for (int i = 0; i < 6; i++) {
-					uart_put_buffered(uint8_t_60deg_pwm_cycles[i]);
-					crc ^= uint8_t_60deg_pwm_cycles[i];
-				}
-				for (int i = 0; i < 6; i++) {
-					uart_put_buffered(uint8_t_hall_order[i]);
-					crc ^= uint8_t_hall_order[i];
-				}
-				for (int i = 0; i < 6; i++) {
-					uart_put_buffered(uint8_t_hall_case[i]);
-					crc ^= uint8_t_hall_case[i];
-				}*/
-				uart_put_buffered(current_hall);
-				crc ^= current_hall;
-				uart_put_buffered(crc);
-/*				uart_put_buffered(ui8_s_hall_angle4_0);
-				uart_put_buffered(ui8_s_hall_angle6_60);
-				uart_put_buffered(ui8_s_hall_angle2_120);
-				uart_put_buffered(ui8_s_hall_angle3_180);
-				uart_put_buffered(ui8_s_hall_angle1_240);
-				uart_put_buffered(ui8_s_hall_angle5_300);
-				uart_put_buffered(float2int(flt_s_motor_constant, 4.0));*/
-				uart_send_if_avail();
-		}
-#endif
 	}// end of while(1) loop
 }
 
