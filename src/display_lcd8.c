@@ -223,11 +223,6 @@ typedef enum {
 		ui16_aca_experimental_flags &= ~PWM_AUTO_OFF;
 	}
 
-	if (lcd_data.p4) {
-		ui16_aca_experimental_flags |= DC_STATIC_ZERO;
-	} else {
-		ui16_aca_experimental_flags &= ~DC_STATIC_ZERO;
-	}
 
 	if (lcd_data.c1 & 0x01) {
 		ui16_aca_flags |= OFFROAD_ENABLED;
@@ -247,13 +242,13 @@ typedef enum {
 		ui16_aca_flags &= ~IDLE_DISABLES_OFFROAD;
 	}
 
-	if (lcd_data.c2) {
+	if (lcd_data.p4) {
 		ui16_aca_flags |= PAS_INVERTED;
 	} else {
 		ui16_aca_flags &= ~PAS_INVERTED;
 	}
 
-	if (lcd_data.c4) {
+	if (lcd_data.c2) {
 		ui16_aca_flags |= ASSIST_LVL_AFFECTS_THROTTLE;
 	} else {
 		ui16_aca_flags &= ~ASSIST_LVL_AFFECTS_THROTTLE;

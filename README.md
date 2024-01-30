@@ -4,11 +4,14 @@ Caution! this is not a professional project. Anything you do with this firmware 
 
 Please read and reread the [wiki](https://github.com/stancecoke/BMSBattery_S_controllers_firmware/wiki).
 
+Modification here are a mismatch of other repositories and my own, in an attempt to improve it ... a bit.
+
 ## Preface
 
 Many thanks to the team of the Forumscontroller, Main functions are from [there](https://github.com/jenkie/Arduino-Pedelec-Controller)!
 
-This is the maintained fork of [casainho's project(not maintained)](https://github.com/OpenSource-EBike-firmware/BMSBattery_S_controllers_firmware)
+This is an unmaintained fork of [stancecoke's project(not maintained)](https://github.com/stancecoke/BMSBattery_S_controllers_firmware)
+which is an unmaintained fork of [casainho's project(not maintained)](https://github.com/OpenSource-EBike-firmware/BMSBattery_S_controllers_firmware)
 
 ## About the project
 
@@ -31,16 +34,27 @@ This firmware replaces the closed source one on Kunteng sine wave controllers. I
     * Recuperation via analog "thumb brake" signal or digitally by brake switch  
     * Start-up support in torque sensor mode  
     * Pushing aid
-    * Block commutation during start-up (only if you have o motor without "weird" angle definitions.
+    * Block commutation during start-up (only if you have a motor without "weird" angle definitions.
 * Displays:
     * Kunteng LCD3 / LCD5 (C/P parameters mapped differently)
     * BluOsec App as Display / as Trip monitor / for on the fly configuration  
     * Kingmeter J-LCD and Forerider App (not tested for a long time now)
+    * (!New) Kunteng LCD8 with cleaner display code
+* (!New) UART communication with a python script to determine hall angles and motor delta angle, the last one will get you in the ballpark.
 
 ### What doesn't
 
 * You debug it thoroughly
 * You tell us / patch it yourself ;-)
+
+## LCD8 settings
+
+* P1 is the motor delta angle. Make sure you set this!
+* P2 is the phase configuration, leave on 0 or 1 for normal, 2-6 are the other phase options
+* P3 (0/1) sets PWM_AUTO_OFF option
+* P4 (0/1) sets PAS_INVERTED option
+* C1 (0-7) bit 2 sets IDLE_DISABLES_OFFROAD, bit 1 sets BRAKE_DISABLES_OFFROAD, bit 0 sets OFFROAD_ENABLED, set to 7 for all and 0 for off
+* C2 (0/1) sets ASSIST_LVL_AFFECTS_THROTTLE
 
 ## For further reading
 
