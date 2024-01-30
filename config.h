@@ -19,8 +19,7 @@
 #define BATTERY_CURRENT_MAX_VALUE 45L
 #define PHASE_CURRENT_MAX_VALUE 135L
 #define REGEN_CURRENT_MAX_VALUE 23L
-#define MOTOR_ROTOR_DELTA_PHASE_ANGLE_RIGHT 234
-#define current_cal_a 45
+#define current_cal_a 30
 #define LEVEL_1 12
 #define LEVEL_2 21
 #define LEVEL_3 30
@@ -37,19 +36,6 @@
 #define RAMP_START 64000
 #define limit_with_throttle_override 35
 #define CORRECTION_AT_ANGLE 127
-#define ANGLE_4_0 1
-#define ANGLE_6_60 38
-#define ANGLE_2_120 81
-#define ANGLE_3_180 111
-#define ANGLE_1_240 180
-#define ANGLE_5_300 208
-
-#define NGLE_4_0 1
-#define NGLE_6_60 38
-#define NGLE_2_120 82
-#define NGLE_3_180 128
-#define NGLE_1_240 166
-#define NGLE_5_300 210
 
 #define TQS_CALIB 0.0
 #define ACA 4764 
@@ -60,8 +46,20 @@
 #define WALK_ASSIST_SPEED_LIMIT 6
 #define WALK_ASSIST_CURRENT_TARGET 5
 
-#define USE_FIELD_WEAKENING
-#define SWAP_PHASES 0
+#define ANGLE_4_0 1
+#define ANGLE_6_60 44
+#define ANGLE_2_120 91
+#define ANGLE_3_180 126
+#define ANGLE_1_240 176
+#define ANGLE_5_300 216
+
+#define MOTOR_ROTOR_DELTA_PHASE_ANGLE_RIGHT 173
+
+
+//#define USE_FIELD_WEAKENING
+#define SWAP_PHASES 3
+
+#define HALL_SENSOR_MODE_REVERSED
 /*
  * pick one
  */

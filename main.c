@@ -141,12 +141,15 @@ int main(void) {
 
 #ifdef TT
 	ui16_aca_experimental_flags |= DC_STATIC_ZERO;// | PWM_AUTO_OFF;
+    ui16_aca_experimental_flags &= ~PWM_AUTO_OFF;
 #endif
+
 #if defined DIAGNOSTICS
 
 	printf("System initialized\r\n");
 
 #endif
+    uint8_t pts = 0;
 	while (1) {
 		uart_send_if_avail();
 
@@ -164,7 +167,6 @@ int main(void) {
 
 			ui8_slowloop_flag = 0; //reset flag for slow loop
 			ui8_veryslowloop_counter++; // increase counter for very slow loop
-#ifndef TT    
             motor_slow_update_pre();
 			checkPasInActivity();
 			updateRequestedTorque(); //now calculates tq for sensor as well
@@ -179,7 +181,6 @@ int main(void) {
 
 			pwm_set_duty_cycle((uint8_t) ui16_setpoint);
             motor_slow_update_post();
-#endif
 			
 			/****************************************************************************/
 			//very slow loop for communication
@@ -224,7 +225,29 @@ int main(void) {
 
 		}// end of slow loop
 		 //
+#ifndef TT
         wfi();
+#endif
+#ifdef TT
+        pts++;
+               if (pts >= 25) {
+                       pts = 0;
+                       uint8_t crc = 4; // randomly chosen with a true die
+                               uart_put_buffered(0xAA);
+
+                               crc ^= 0xAA;
+                               volatile uint16_t uc = ui16_adc_read_phase_B_current();
+                               uart_put_buffered(uc >> 8);
+                               uart_put_buffered(uc  & 0xFF);
+                               crc ^= uc >> 8;
+                               crc ^= (uc & 0xFF);
+                               uart_put_buffered(current_hall);
+                               crc ^= current_hall;
+                               uart_put_buffered(crc);
+                                uart_send_if_avail();
+               }
+#endif
+
 	}// end of while(1) loop
 }
 

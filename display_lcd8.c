@@ -137,14 +137,24 @@ void send_message() {
 	// each unit of B8 = 0.25A
 	
 
-	if (ui16_BatteryCurrent <= ui16_current_cal_b + 2) { //avoid full power displayed at regen and avoid small watts being displayed when the bike 
-		controller_data.amps = 0;
-	}
-	else {
-		controller_data.amps = (uint8_t)((((ui16_BatteryCurrent - ui16_current_cal_b - 1) << 2) * 10) / ui8_current_cal_a);
-	}
+	/* if (ui16_BatteryCurrent <= ui16_current_cal_b) { //avoid full power displayed at regen and avoid small watts being displayed when the bike  */
+	/* 	controller_data.amps = 0; */
+	/* } */
+	/* else { */
+    if (ui16_BatteryCurrent < ui16_current_cal_b) {
+        controller_data.mode_regen = 1;
+        controller_data.mode_assist = 0;
+        controller_data.mode_cruise = 0;
+        controller_data.mode_throttle = 0;
+        controller_data.mode_normal = 0;
+    	controller_data.amps = (uint8_t)(((((ui16_BatteryCurrent - ui16_current_cal_b - 1) % ui16_current_cal_b) << 2) * 10) / ui8_current_cal_a);
+    } else {
+    	controller_data.amps = (uint8_t)((((ui16_BatteryCurrent - ui16_current_cal_b - 1) << 2) * 10) / ui8_current_cal_a);
+    }
+    i8_motor_temperature = ui16_BatteryCurrent - ui16_current_cal_b;
+	/* } */
 	// B9: motor temperature
-	controller_data.motor_temperature = i8_motor_temperature - 15; //according to documentation at endless sphere
+    controller_data.motor_temperature = i8_motor_temperature - 15; //according to documentation at endless sphere
 	// B10 and B11: 0
 	controller_data.B10 = 0;
 	controller_data.B11 = 0;

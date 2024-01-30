@@ -80,6 +80,11 @@ void hall_sensor_init(void) {
 void hall_sensors_read_and_action(void) {
 	// read hall sensors signal pins and mask other pins
 	int8_t hs = (GPIO_ReadInputData(HALL_SENSORS__PORT) & (HALL_SENSORS_MASK));
+
+#ifdef HALL_SENSOR_MODE_REVERSED
+    hs = (hs & 0x04) | (hs & 0x01) << 1 | (hs & 0x02) >> 1;
+#endif
+
 	if ((hs != hall_sensors_last_raw) || (ui8_possible_motor_state == MOTOR_STATE_COAST)) // let's run the code when motor is stopped/coast so it can pick right motor position for correct startup
 	{
 		hall_sensors_last_raw = hs;

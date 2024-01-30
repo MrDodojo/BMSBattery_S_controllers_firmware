@@ -18,11 +18,6 @@
 
 #define SVM_TABLE SVM
 
-#ifndef SWAP_PHASES
-#define SWAP_PHASES_DEFAULT 0
-#else
-#define SWAP_PHASES_DEFAULT SWAP_PHASES
-#endif
 
 extern uint8_t ui8_duty_cycle_target;
 
