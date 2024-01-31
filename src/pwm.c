@@ -225,7 +225,7 @@ void pwm_apply_duty_cycle(uint8_t ui8_duty_cycle_value) {
 	// set final duty_cycle value
     switch (pwm_swap_phases) {
         /*
-         * 123, 132, 213, 321, 231, 321
+         * 123, 132, 213, 321, 231, 312
          */
         deflaut:
         case 0:
@@ -246,8 +246,8 @@ void pwm_apply_duty_cycle(uint8_t ui8_duty_cycle_value) {
             break;
         case 4:
             TIM1_SetCompare3((uint16_t) (ui8_value_new_C << 1));
-            TIM1_SetCompare2((uint16_t) (ui8_value_new_B << 1));
-            TIM1_SetCompare1((uint16_t) (ui8_value_new_A << 1));
+            TIM1_SetCompare1((uint16_t) (ui8_value_new_B << 1));
+            TIM1_SetCompare2((uint16_t) (ui8_value_new_A << 1));
             break;
         case 5:
             TIM1_SetCompare2((uint16_t) (ui8_value_new_C << 1));
@@ -300,8 +300,8 @@ void pwm_apply_duty_cycle(uint8_t ui8_duty_cycle_value) {
             break;
         case 4:
             TIM1_SetCompare3((uint16_t) (ui8_value_C << 2));
-            TIM1_SetCompare2((uint16_t) (ui8_value_B << 2));
-            TIM1_SetCompare1((uint16_t) (ui8_value_A << 2));
+            TIM1_SetCompare1((uint16_t) (ui8_value_B << 2));
+            TIM1_SetCompare2((uint16_t) (ui8_value_A << 2));
             break;
         case 5:
             TIM1_SetCompare2((uint16_t) (ui8_value_C << 2));
