@@ -16,6 +16,7 @@
 #define ADC1_CHANNEL_MOTOR_TOTAL_CURRENT_FILTERED	ADC1_CHANNEL_8
 #define ADC1_CHANNEL_BATTERY_VOLTAGE			ADC1_CHANNEL_9
 #define ADC1_CHANNEL_THROTTLE				ADC1_CHANNEL_4
+#define ADC1_CHANNEL_TEMPERATURE            ADC1_CHANNEL_7
 
 extern uint8_t adc_throttle_busy_flag;
 extern uint8_t ui8_BatteryCurrent;
@@ -33,5 +34,6 @@ uint8_t ui8_adc_read_motor_total_current (void);
 uint16_t ui16_adc_read_motor_total_current (void);
 uint8_t ui8_adc_read_battery_voltage (void);
 uint16_t ui16_adc_read_battery_voltage (void);
+uint16_t ui16_adc_read_temperature(void);
 
 #endif /* _ADC_H */

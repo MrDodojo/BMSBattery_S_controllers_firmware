@@ -41,5 +41,7 @@ void updatePasStatus(void);
 void checkPasInActivity(void);
 void updateRequestedTorque(void);
 
+int8_t x4_ntc_value(void);
+
 #endif /* ACACOMMONS_H */
 

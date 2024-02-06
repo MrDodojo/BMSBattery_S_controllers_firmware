@@ -140,7 +140,7 @@ void pwm_duty_cycle_controller(void) {
 
 uint8_t fetch_table_value(uint8_t table_pos_in) {
 
-	// we only store a quarter of the values and generate the other 4 quarter with a simple translation
+	// we only store a quarter of the values and generate the other 3 quartesr with a simple translation
 	uint8_t translated_table_pos = table_pos_in&~192;
 	uint8_t table_val;
 

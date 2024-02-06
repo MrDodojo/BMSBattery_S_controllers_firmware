@@ -158,7 +158,6 @@ int main(void) {
 
 #if (defined (DISPLAY_TYPE) && defined (DISPLAY_TYPE_KINGMETER)) || defined DISPLAY_TYPE_KT_LCD3 || defined BLUOSEC || defined DISPLAY_TYPE_KT_LCD8
 
-        i8_motor_temperature = pwm_swap_phases;
 		display_update();
 #endif
 
@@ -171,7 +170,9 @@ int main(void) {
 			checkPasInActivity();
 			updateRequestedTorque(); //now calculates tq for sensor as well
 			updateSlowLoopStates();
+#ifndef X4_TEMPERATURE
 			updateX4();
+#endif
 			updateLight();
 
 			ui16_setpoint = (uint16_t) aca_setpoint(ui16_time_ticks_between_pas_interrupt, ui16_setpoint); //update setpoint
@@ -192,10 +193,12 @@ int main(void) {
 				if (ui8_ultraslowloop_counter >= 10) {
 					ui8_ultraslowloop_counter = 0;
 					ui8_uptime++;
-
-					/*updateX4(); //Can be activated to display temperature on display
-					i8_motor_temperature = (ui16_x4_value - 105) >> 1;
-					i8_motor_temperature += (int8_t)(ui16_BatteryCurrent - ui16_current_cal_b - 2) / 9; //if temperature sensor is not in the exact same common ground point you can add some compensation according to battery current
+#ifdef X4_TEMPERATURE
+			        updateX4();
+                    i8_motor_temperature = x4_ntc_value(); // low side ntc, use iff you have a 100k pullup and 100k ntc
+					//i8_motor_temperature = (ui16_x4_value - 105) >> 1;
+					//i8_motor_temperature += (int8_t)(ui16_BatteryCurrent - ui16_current_cal_b - 2) / 9; //if temperature sensor is not in the exact same common ground point you can add some compensation according to battery current
+#endif
 					//*/
 				}
 

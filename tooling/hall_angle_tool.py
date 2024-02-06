@@ -124,11 +124,14 @@ while True:
                 angle[1] = (row[1] - row[3]) * (360.0/dur)
                 angle[5] = (row[5] - row[1]) * (360.0/dur)
 
-                prev = current[0]
-                crossover = 0
-                for i in current[1:]:
-                    if prev[1] > i[1] and prev[1] > 0 and i[1] < 0:
-                        crossover = (i[0] + prev[0]) / 2
+                for i in range(1, len(current)-1): #[1:]:
+                    cp = current[i-1][1]
+                    cv = current[i][1]
+                    dc = cp + abs(cv) # only needed when cv < 0
+                    tp = current[i-1][0]
+                    tv = current[i][0]
+                    if cp > cv and cp >= 0 and cv <= 0: # either previous or current measurement can be 0
+                    crossover = tp + (((tv - tp) / dc) * dp) # take zero point
 
                 if not first:
                     for i in range(1, 7):

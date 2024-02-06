@@ -173,9 +173,11 @@ uint16_t aca_setpoint(uint16_t ui16_time_ticks_between_pas_interrupt, uint16_t s
 
 			//Current target based on linear input on pad X4
 		} else {
+#ifndef X4_TEMPERATURE
 			ui8_temp = map(ui16_x4_value >> 2, ui8_throttle_min_range, ui8_throttle_max_range, 0, 128); //map regen throttle to limits
 			//ui8_temp = map(ui16_momentary_throttle, ui8_throttle_min_range, ui8_throttle_max_range, 0, 128); //use throttle to vary regen when braking
 			controll_state_temp -= 2;
+#endif
 		}
 		float_temp = ((ui8_temp * ui16_regen_current_max_value) >> 7);
 
