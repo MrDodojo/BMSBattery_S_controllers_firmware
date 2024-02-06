@@ -142,7 +142,7 @@ typedef struct LCD8_controller_data_t {
 			uint8_t mode_unknown : 1;
 			uint8_t mode_cruise : 1;
 			uint8_t mode_assist : 1;
-			uint8_t mode_regen : 1;
+			uint8_t mode_brake : 1;
 			uint8_t unknown4 : 2; // B7
 			uint8_t amps; // B8
 			uint8_t motor_temperature; // B9

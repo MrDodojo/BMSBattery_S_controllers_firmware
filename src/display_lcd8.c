@@ -20,6 +20,7 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301  USA
  */
 
 #include <stdio.h>
+#include <string.h>
 #include "stm8s.h"
 #include "display.h"
 #include "main.h"
@@ -32,6 +33,8 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301  USA
 #include "interrupts.h"
 #include "ACAcontrollerState.h"
 #include "pwm.h"
+
+//#define DEBUG
 
 extern uint8_t pwm_swap_phases;
 #ifdef DISPLAY_TYPE_KT_LCD8
@@ -85,26 +88,47 @@ void send_message() {
 	}
 
 	// calc battery pack state of charge (SOC)
-	ui16_battery_bars_calc = ui8_adc_read_battery_voltage() - ui8_s_battery_voltage_min;
-	ui16_battery_bars_calc<<=8;
-	ui16_battery_bars_calc /=(ui8_s_battery_voltage_max-ui8_s_battery_voltage_min);
-
-	controller_data.charging_status = 0;
-	if (ui16_battery_bars_calc > 200) {
+	ui16_battery_bars_calc = ui8_adc_read_battery_voltage();
+    if (ui16_battery_bars_calc > BATTERY_VOLTAGE_MAX_VALUE) {
+        ui16_battery_bars_calc = 1024;
+    } else if (ui16_battery_bars_calc < BATTERY_VOLTAGE_MIN_VALUE) {
+        ui16_battery_bars_calc = 0;
+    } else {
+        ui16_battery_bars_calc -= BATTERY_VOLTAGE_MIN_VALUE;
+        ui16_battery_bars_calc<<=8;
+        ui16_battery_bars_calc /=(BATTERY_VOLTAGE_MAX_VALUE - BATTERY_VOLTAGE_MIN_VALUE);
+    }
+#ifdef DEBUG
+    memset(&controller_data, 0x00, sizeof(controller_data));
+#endif
+    if (ui16_battery_bars_calc == 1024) {
+        controller_data.charging_status = 2;
+		controller_data.bars = 0;
+    } // charging
+    else	if (ui16_battery_bars_calc > 204) {
+        controller_data.charging_status = 0;
 		controller_data.bars = 4;
 	}// 4 bars | full
-	else if (ui16_battery_bars_calc > 150) {
+	else if (ui16_battery_bars_calc > 154) {
+        controller_data.charging_status = 0;
 		controller_data.bars = 3;
 	}// 3 bars
-	else if (ui16_battery_bars_calc > 100) {
+	else if (ui16_battery_bars_calc > 102) {
+        controller_data.charging_status = 0;
 		controller_data.bars = 2;
 	}// 2 bars
-	else if (ui16_battery_bars_calc > 50) {
+	else if (ui16_battery_bars_calc > 51) {
+        controller_data.charging_status = 0;
 		controller_data.bars = 1;
 	}// 1 bar
-	else {
-		controller_data.charging_status = 3;
+	else if (ui16_battery_bars_calc > 25) {
+        controller_data.charging_status = 0;
+        controller_data.bars = 0;
 	} // empty
+    else {
+        controller_data.charging_status = 1;
+        controller_data.bars = 0;
+    } // flashing
 
 	controller_data.B0 = 0x41;
 	// B2: 24V controller
@@ -124,7 +148,7 @@ void send_message() {
 	// 0 value so no effect on xor operation for now
 	// B7: moving mode indication, bit
 #define MVI(x) ((ui8_moving_indication >> x) & 0x01)
-	controller_data.mode_regen = MVI(5);
+	controller_data.mode_brake = MVI(5);
 	controller_data.mode_assist = MVI(4);
 	controller_data.mode_cruise = MVI(3);
 	controller_data.mode_throttle = MVI(1);
@@ -141,18 +165,11 @@ void send_message() {
 	/* 	controller_data.amps = 0; */
 	/* } */
 	/* else { */
-    if (ui16_BatteryCurrent < ui16_current_cal_b) {
-        controller_data.mode_regen = 1;
-        controller_data.mode_assist = 0;
-        controller_data.mode_cruise = 0;
-        controller_data.mode_throttle = 0;
-        controller_data.mode_normal = 0;
-    	controller_data.amps = (uint8_t)(((((ui16_BatteryCurrent - ui16_current_cal_b - 1) % ui16_current_cal_b) << 2) * 10) / ui8_current_cal_a);
+    if (ui16_BatteryCurrent < ui16_current_cal_b - 1) {
+    	controller_data.amps = 0; 
     } else {
     	controller_data.amps = (uint8_t)((((ui16_BatteryCurrent - ui16_current_cal_b - 1) << 2) * 10) / ui8_current_cal_a);
     }
-    i8_motor_temperature = ui16_BatteryCurrent - ui16_current_cal_b;
-	/* } */
 	// B9: motor temperature
     controller_data.motor_temperature = i8_motor_temperature - 15; //according to documentation at endless sphere
 	// B10 and B11: 0
@@ -184,7 +201,7 @@ void digestLcdValues(void) {
 	ui8_assistlevel_global = lcd_data.assist_level + 80; // always add max regen 
 	ui8_walk_assist = (lcd_data.assist_level == 6);
 	// added by DerBastler Light On/Off
-	light_stat = (light_stat&~128) | lcd_data.lights; // only update 7th bit, 1st bit is current status
+	light_stat = (light_stat&~128) | (lcd_data.lights << 7); // only update 7th bit, 1st bit is current status
 	
 	if (lcd_data.max_speed != ui8_speedlimit_kph) {
 		ui8_speedlimit_kph = lcd_data.max_speed;
