@@ -153,6 +153,7 @@ typedef enum {
 
 } ICC_SIGNALS;
 #ifndef DISPLAY_TYPE_KT_LCD8
+typedef enum {
 	ASSIST_LVL_AFFECTS_THROTTLE = ((uint16_t) 1),
 	OFFROAD_ENABLED = ((uint16_t) 2),
 	BRAKE_DISABLES_OFFROAD = ((uint16_t) 4),
@@ -185,6 +186,7 @@ typedef enum {
 	DIGITAL_REGEN = ((uint16_t) 0x0010),
 	SPEED_INFLUENCES_REGEN = ((uint16_t) 0x0020),
 	SPEED_INFLUENCES_TORQUESENSOR = ((uint16_t) 0x0040),
+
 	PAS_INVERTED = ((uint16_t) 0x0080),
 
 	DUMMY_ALWAYS_ON = ((uint16_t) 0x0100),
@@ -215,6 +217,10 @@ typedef enum {
 	HIGH_SPEED_MOTOR = ((uint16_t) 256),
 	PWM_AUTO_OFF = ((uint16_t) 1024),
 			
+    THROTTLE_REGEN = ((uint16_t) 0x1000),
+    THROTTLE_ALLOWED_FOR_WALK = ((uint16_t) 0x2000),
+    THROTTLE_UNRESTRICTED = ((uint16_t) 0x4000),
+    USE_ALTERNATE_WAVETABLE_C = ((uint16_t) 0x8000),
 } ACA_EXPERIMENTAL_FLAGS;
 #else
 typedef enum {
@@ -230,6 +236,10 @@ typedef enum {
 	HIGH_SPEED_MOTOR = ((uint16_t) 0x0010),
 	PWM_AUTO_OFF = ((uint16_t) 0x0020),
     DUMMY_EXP_ALWAYS_ON = ((uint16_t) 0x0040),		
+
+    THROTTLE_REGEN = ((uint16_t) 0x0100),
+    THROTTLE_ALLOWED_FOR_WALK = ((uint16_t) 0x0200),
+    THROTTLE_UNRESTRICTED = ((uint16_t) 0x0400),
 } ACA_EXPERIMENTAL_FLAGS;
 #endif
 

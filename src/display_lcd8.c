@@ -63,7 +63,7 @@ void display_init(){
 	// noop just here to have a common interface
 }
 
-void send_message() {
+void send_message(void) {
 
 	// prepare moving indication info
 	
@@ -89,7 +89,7 @@ void send_message() {
 
 	// calc battery pack state of charge (SOC)
 	ui16_battery_bars_calc = ui8_adc_read_battery_voltage();
-    if (ui16_battery_bars_calc > BATTERY_VOLTAGE_MAX_VALUE) {
+    if (ui16_battery_bars_calc > BATTERY_VOLTAGE_MAX_VALUE - BATTERY_CHARGING_VS_FULL_OFFSET) {
         ui16_battery_bars_calc = 1024;
     } else if (ui16_battery_bars_calc < BATTERY_VOLTAGE_MIN_VALUE) {
         ui16_battery_bars_calc = 0;
@@ -129,7 +129,7 @@ void send_message() {
         controller_data.charging_status = 1;
         controller_data.bars = 0;
     } // flashing
-
+      //
 	controller_data.B0 = 0x41;
 	// B2: 24V controller
 	controller_data.nominal_voltage = ui8_battery_voltage_nominal;
@@ -151,6 +151,7 @@ void send_message() {
 	controller_data.mode_brake = MVI(5);
 	controller_data.mode_assist = MVI(4);
 	controller_data.mode_cruise = MVI(3);
+    controller_data.mode_cruise_icon = MVI(3); // cruise set?
 	controller_data.mode_throttle = MVI(1);
 	controller_data.mode_normal = MVI(0);
 	// B8: 4x controller current
@@ -165,16 +166,18 @@ void send_message() {
 	/* 	controller_data.amps = 0; */
 	/* } */
 	/* else { */
-    if (ui16_BatteryCurrent < ui16_current_cal_b - 1) {
-    	controller_data.amps = 0; 
+    if (ui16_BatteryCurrent < ui16_current_cal_b) {
+    	controller_data.amps = ui16_current_cal_b - ui16_BatteryCurrent; 
+        controller_data.mode_brake = 1;
     } else {
     	controller_data.amps = (uint8_t)((((ui16_BatteryCurrent - ui16_current_cal_b - 1) << 2) * 10) / ui8_current_cal_a);
     }
+
 	// B9: motor temperature
     controller_data.motor_temperature = i8_motor_temperature - 15; //according to documentation at endless sphere
 	// B10 and B11: 0
-	controller_data.B10 = 0;
-	controller_data.B11 = 0;
+	controller_data.B10 = 0x00;
+	controller_data.B11 = 0x00;
 	//for (int i = 1; i < 12; i++) controller_data.raw[i] = 0xaa;
 	// calculate CRC xor
 	controller_data.crc = 0;
@@ -228,11 +231,11 @@ typedef enum {
 
 	ui8_s_motor_angle = lcd_data.p1;	
 	
-	if (lcd_data.c14) { // can be >1 but all set value
-		ui16_aca_experimental_flags |= AVOID_MOTOR_CYCLES_JITTER;
-	} else {
-		ui16_aca_experimental_flags &= ~AVOID_MOTOR_CYCLES_JITTER;
-	}
+    if (pwm_swap_phases != lcd_data.p2) {
+        pwm_swap_phases = lcd_data.p2; // alows live swapping of 
+                                       // phases to test motors
+        pwm_duty_cycle_controller();
+    }
 
 	if (lcd_data.p3) {
 		ui16_aca_experimental_flags |= PWM_AUTO_OFF;
@@ -240,30 +243,16 @@ typedef enum {
 		ui16_aca_experimental_flags &= ~PWM_AUTO_OFF;
 	}
 
-
-	if (lcd_data.c1 & 0x01) {
-		ui16_aca_flags |= OFFROAD_ENABLED;
-	} else {
-		ui16_aca_flags &= ~OFFROAD_ENABLED;
-	}
-
-	if (lcd_data.c1 & 0x02) {
-		ui16_aca_flags |= BRAKE_DISABLES_OFFROAD;
-	} else {
-		ui16_aca_flags &= ~BRAKE_DISABLES_OFFROAD;
-	}
-
-	if (lcd_data.c1 & 0x04) {
-		ui16_aca_flags |= IDLE_DISABLES_OFFROAD;
-	} else {
-		ui16_aca_flags &= ~IDLE_DISABLES_OFFROAD;
-	}
-
 	if (lcd_data.p4) {
 		ui16_aca_flags |= PAS_INVERTED;
 	} else {
 		ui16_aca_flags &= ~PAS_INVERTED;
 	}
+	
+    if (lcd_data.c1 != ((old_aca >> 1) & 0x07)) {
+		ui16_aca_flags &= ~(OFFROAD_ENABLED | BRAKE_DISABLES_OFFROAD | IDLE_DISABLES_OFFROAD);
+        ui16_aca_flags |= lcd_data.c1 << 1;
+    }
 
 	if (lcd_data.c2) {
 		ui16_aca_flags |= ASSIST_LVL_AFFECTS_THROTTLE;
@@ -271,12 +260,48 @@ typedef enum {
 		ui16_aca_flags &= ~ASSIST_LVL_AFFECTS_THROTTLE;
 	}
 
-    if (pwm_swap_phases != lcd_data.p2) {
-        pwm_swap_phases = lcd_data.p2; // alows live swapping of 
-                                       // phases to test motors
-
-        pwm_duty_cycle_controller();
+    if (lcd_data.c5 != ((old_experimental >> 5) & 0x07)) {
+		ui16_aca_experimental_flags &= ~(USE_ALTERNATE_WAVETABLE | USE_ALTERNATE_WAVETABLE_B | USE_ALTERNATE_WAVETABLE_C);
+        ui16_aca_experimental_flags |= (lcd_data.c5 & 0x07) << 5;
     }
+
+    if (lcd_data.c12 != ((old_aca >> 4) & 0x07)) {
+		ui16_aca_flags &= ~(DIGITAL_REGEN | SPEED_INFLUENCES_REGEN | SPEED_INFLUENCES_TORQUESENSOR);
+        ui16_aca_flags |= lcd_data.c12 << 4;
+    }
+
+    if (lcd_data.l1 != ((ui16_aca_experimental_flags >> 8) & 0x03)) {
+        ui16_aca_experimental_flags &= ~(THROTTLE_ALLOWED_FOR_WALK |  THROTTLE_REGEN | THROTTLE_UNRESTRICTED);
+        switch (lcd_data.l1) {
+            case 0:
+            default:
+                ui16_aca_experimental_flags |= THROTTLE_ALLOWED_FOR_WALK;
+                break;
+            case 1:
+                ui16_aca_experimental_flags |= THROTTLE_REGEN;
+                break;
+
+            case 2:
+                ui16_aca_experimental_flags |= THROTTLE_UNRESTRICTED;
+                break;
+            case 3:
+                ui16_aca_experimental_flags |= THROTTLE_UNRESTRICTED | THROTTLE_REGEN;
+                break;
+        }
+    }
+
+	if (lcd_data.l2) {
+		ui16_aca_experimental_flags |= AVOID_MOTOR_CYCLES_JITTER;
+	} else {
+		ui16_aca_experimental_flags &= ~AVOID_MOTOR_CYCLES_JITTER;
+	}
+
+	if (lcd_data.l3) {
+		ui16_aca_experimental_flags |= DYNAMIC_ASSIST_LEVEL;
+	} else {
+		ui16_aca_experimental_flags &= ~DYNAMIC_ASSIST_LEVEL;
+	}
+
     if (ui16_aca_flags != old_aca) {
 		eeprom_write(OFFSET_ACA_FLAGS_HIGH_BYTE, (ui16_aca_flags >> 8)& 0xFF);
 		eeprom_write(OFFSET_ACA_FLAGS, ui16_aca_flags & 0xFF);
@@ -290,7 +315,7 @@ typedef enum {
 
 // see if we have a received package to be processed
 
-void display_update() {
+void display_update(void) {
 
 	// fill local buffer from uart ringbuffer
 	// new: we put in a packed union so we do not have to mess with calculating the offset
@@ -325,7 +350,25 @@ void display_update() {
 			// added by DerBastler Light On/Off 
 			// walk assist, see https://endless-sphere.com/forums/viewtopic.php?f=2&t=73471&p=1324745&hilit=kunteng+protocol+hacked#p1109048 
 			lcd_data.max_speed = 10 + (lcd_data.max_speed_msb << 3 | lcd_data.max_speed_lsb);
-			lcd_data.wheel_size = lcd_data.wheel_size_msb << 2 | lcd_data.wheel_size_lsb;
+			lcd_data.wheel_size = lcd_data.wheel_size_msb << 1 | lcd_data.wheel_size_lsb;
+            /* wheel sizes:
+             * 0 = 16"
+             * 1 = 18"
+             * 2 = 20"
+             * 3 = 23"
+             * 4 = 24"
+             * 5 = 26"
+             * 6 = 27.5"
+             * 7 = 28"
+             * 8 = 12"
+             * 9 = 14"
+             * 10 = 8"
+             * 11 = 10"
+             * 12 = 6"
+             * 13 = 5"
+             * 14 = not available
+             * 15 = 29"
+             */
 
 			if (lcd_data.B9 == 0) {
 				ui8_cruiseHasBeenLow = 1;

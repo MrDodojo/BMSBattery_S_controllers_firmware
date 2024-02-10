@@ -32,7 +32,7 @@ def signal_handler(sig, frame):
 current_offset = 512
 signal.signal(signal.SIGINT, signal_handler)
 ob = None
-ser = serial.Serial("/dev/ttyUSB0", 250000, timeout=0)
+ser = serial.Serial("/dev/ttyUSB0", 115200, timeout=0)
 buffer = b""
 update = False
 SIZE = 1 + 2 + 1 + 1
@@ -47,7 +47,10 @@ while True:
     data = ser.read(1024)
     buffer = buffer + data
     start = -1
+   
     if len(buffer) >= SIZE:
+
+        print(buffer) 
         for i in range(0, len(buffer) - 1):
             if buffer[i] == 0xaa:
                 start = i
@@ -131,7 +134,7 @@ while True:
                     tp = current[i-1][0]
                     tv = current[i][0]
                     if cp > cv and cp >= 0 and cv <= 0: # either previous or current measurement can be 0
-                    crossover = tp + (((tv - tp) / dc) * dp) # take zero point
+                        crossover = tp + (((tv - tp) / dc) * dp) # take zero point
 
                 if not first:
                     for i in range(1, 7):

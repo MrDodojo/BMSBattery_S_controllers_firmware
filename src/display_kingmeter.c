@@ -472,11 +472,11 @@ void kingmeter_update(void) {
 	}*/
 }
 
-void display_init() {
+void display_init(void) {
 	KingMeter_Init(&KM);
 }
 
-void display_update() {
+void display_update(void) {
 	
 #if (DISPLAY_TYPE == DISPLAY_TYPE_KINGMETER_618U)
 	

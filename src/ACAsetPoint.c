@@ -108,12 +108,14 @@ uint16_t aca_setpoint(uint16_t ui16_time_ticks_between_pas_interrupt, uint16_t s
 	// first select current speed limit
 	if (ui8_offroad_state == 255) {
 		ui8_speedlimit_actual_kph = 80;
-	} else if (ui8_walk_assist) {
+	} else if (ui8_walk_assist || (ui16_aca_experimental_flags & THROTTLE_ALLOWED_FOR_WALK && ui16_sum_throttle > 2)) {
 		ui8_speedlimit_actual_kph = WALK_ASSIST_SPEED_LIMIT;
 	} else if (ui8_offroad_state > 15 && ui16_sum_throttle <= 2) { // allow a slight increase based on ui8_offroad_state
 		ui8_speedlimit_actual_kph = ui8_speedlimit_kph + (ui8_offroad_state - 16);
 	} else if (ui8_offroad_state > 15 && ui16_sum_throttle > 2) {
 		ui8_speedlimit_actual_kph = ui8_speedlimit_with_throttle_override_kph + (ui8_offroad_state - 16);
+    } else if (ui16_aca_experimental_flags & THROTTLE_UNRESTRICTED && ui16_sum_throttle > 2) {
+        ui8_speedlimit_actual_kph = ui8_speedlimit_with_throttle_override_kph;
 	} else if (ui16_time_ticks_for_pas_calculation > timeout || !PAS_is_active) {
 		ui8_speedlimit_actual_kph = ui8_speedlimit_without_pas_kph;
 	} else {
@@ -173,11 +175,16 @@ uint16_t aca_setpoint(uint16_t ui16_time_ticks_between_pas_interrupt, uint16_t s
 
 			//Current target based on linear input on pad X4
 		} else {
+            if (ui16_aca_experimental_flags & THROTTLE_REGEN) {
+			    ui8_temp = map(ui16_momentary_throttle, ui8_throttle_min_range, ui8_throttle_max_range, 0, 128); //use throttle to vary regen when braking
+            } else {
 #ifndef X4_TEMPERATURE
-			ui8_temp = map(ui16_x4_value >> 2, ui8_throttle_min_range, ui8_throttle_max_range, 0, 128); //map regen throttle to limits
-			//ui8_temp = map(ui16_momentary_throttle, ui8_throttle_min_range, ui8_throttle_max_range, 0, 128); //use throttle to vary regen when braking
-			controll_state_temp -= 2;
+                ui8_temp = map(ui16_x4_value >> 2, ui8_throttle_min_range, ui8_throttle_max_range, 0, 128); //map regen throttle to limits
+#else
+                ui8_temp = 1;
 #endif
+            }
+			controll_state_temp -= 2;
 		}
 		float_temp = ((ui8_temp * ui16_regen_current_max_value) >> 7);
 

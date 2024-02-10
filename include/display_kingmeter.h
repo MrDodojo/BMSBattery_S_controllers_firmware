@@ -187,8 +187,8 @@ typedef struct
 }KINGMETER_t;
 
 
-void display_init();
-void display_update();
+void display_init(void);
+void display_update(void);
 
 
 #endif // (DISPLAY_TYPE & DISPLAY_TYPE_KINGMETER)

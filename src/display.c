@@ -60,7 +60,7 @@ void display_init(){
 	// noop just here to have a common interface
 }
 
-void send_message() {
+void send_message(void) {
 
 	// prepare moving indication info
 	
@@ -181,7 +181,7 @@ void digestLcdValues(void) {
 
 // see if we have a received package to be processed
 
-void display_update() {
+void display_update(void) {
 
 	// fill local buffer from uart ringbuffer
 	uart_fill_rx_packet_buffer(ui8_rx_buffer, 13, &ui8_UARTCounter);

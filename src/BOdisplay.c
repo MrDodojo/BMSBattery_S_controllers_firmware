@@ -586,11 +586,11 @@ void digestConfigRequest(uint8_t configAddress, uint8_t requestedCodeLowByte, ui
 
 }
 
-void display_init() {
+void display_init(void) {
 	// noop just here to have a common interface
 }
 
-uint8_t readRtu() {
+uint8_t readRtu(void) {
 	uart_fill_rx_packet_buffer(ui8_rx_buffer, 11, &ui8_rx_buffer_counter);
 	if (ui8_rx_buffer_counter == 11) {
 		ui8_rx_converted_buffer[0] = ui8_rx_buffer[0];
@@ -607,7 +607,7 @@ uint8_t readRtu() {
 	return 0;
 }
 
-uint8_t readAscii() {
+uint8_t readAscii(void) {
 	uart_fill_rx_packet_buffer(ui8_rx_buffer, 17, &ui8_rx_buffer_counter);
 	if (ui8_rx_buffer_counter == 17) {
 		ui8_rx_converted_buffer[0] = (hex2int(ui8_rx_buffer[1]) << 4) + hex2int(ui8_rx_buffer[2]);
@@ -624,11 +624,11 @@ uint8_t readAscii() {
 	return 0;
 }
 
-uint8_t readUart() {
+uint8_t readUart(void) {
 	return readRtu();
 }
 
-void display_update() {
+void display_update(void) {
 
 	if (readUart()) {
 

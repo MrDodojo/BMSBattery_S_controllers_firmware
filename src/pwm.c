@@ -148,21 +148,29 @@ uint8_t fetch_table_value(uint8_t table_pos_in) {
 		translated_table_pos = 64 - translated_table_pos;
 	}
 
-	if (ui8_dynamic_motor_state == MOTOR_STATE_RUNNING_NO_INTERPOLATION){
-		table_val = six_step[translated_table_pos];
-	}else if ((ui16_aca_experimental_flags & (USE_ALTERNATE_WAVETABLE|USE_ALTERNATE_WAVETABLE_B)) == (0)){
-		// default
-		table_val = midpoint_clamp_gen[translated_table_pos];
-	}else if ((ui16_aca_experimental_flags & (USE_ALTERNATE_WAVETABLE|USE_ALTERNATE_WAVETABLE_B)) == (USE_ALTERNATE_WAVETABLE)){
-		table_val = pure_sine_gen[translated_table_pos];
-	}else if ((ui16_aca_experimental_flags & (USE_ALTERNATE_WAVETABLE|USE_ALTERNATE_WAVETABLE_B)) == (USE_ALTERNATE_WAVETABLE_B)){
-		table_val = third_harmonic_gen[translated_table_pos];
-	}else if ((ui16_aca_experimental_flags & (USE_ALTERNATE_WAVETABLE|USE_ALTERNATE_WAVETABLE_B)) == (USE_ALTERNATE_WAVETABLE|USE_ALTERNATE_WAVETABLE_B)){
-		table_val = nip_tuck_gen[translated_table_pos];
-	}else{
-		// fallback
-		table_val = midpoint_clamp_gen[translated_table_pos];
+	if (ui8_dynamic_motor_state == MOTOR_STATE_RUNNING_NO_INTERPOLATION) {
+        if (ui16_aca_experimental_flags & USE_ALTERNATE_WAVETABLE_C) {
+		    table_val = pure_sine_gen[translated_table_pos]; // in case of PMSM
+        } else {
+    		table_val = six_step[translated_table_pos];
+        }
+	} else {
+        switch (ui16_aca_experimental_flags & (USE_ALTERNATE_WAVETABLE | USE_ALTERNATE_WAVETABLE_B)) {
+            case USE_ALTERNATE_WAVETABLE:
+                table_val = pure_sine_gen[translated_table_pos];
+                break;
+            case USE_ALTERNATE_WAVETABLE_B:
+                table_val = third_harmonic_gen[translated_table_pos];
+                break;
+            case USE_ALTERNATE_WAVETABLE | USE_ALTERNATE_WAVETABLE_B:
+		        table_val = nip_tuck_gen[translated_table_pos];
+                break;
+            default:
+                table_val = midpoint_clamp_gen[translated_table_pos];
+                break;
+        }
 	}
+
 	if (ui16_pwm_cycles_second == PWM_CPS_HIGH_SPEED){
 		// high speed motor runs at 25% higher pwm frequency so the pwm counters max value is 25% lower
 		table_val = table_val-(table_val>>2);

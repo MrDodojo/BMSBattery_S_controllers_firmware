@@ -21,18 +21,18 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301  USA
 
 #include "config.h"
 
-void display_init();
-void display_update();
+void display_init(void);
+void display_update(void);
 //void display_debug(HardwareSerial* localSerial);
 
 //void display_show_important_info(const char *str, int duration_secs);
 //void display_show_important_info(const __FlashStringHelper *str, int duration_secs);
 
-void display_show_welcome_msg();
-void display_show_welcome_msg_temp();
+void display_show_welcome_msg(void);
+void display_show_welcome_msg_temp(void);
 
-void display_prev_view();
-void display_next_view();
+void display_prev_view(void);
+void display_next_view(void);
 
 
 
@@ -87,35 +87,37 @@ typedef struct LCD8_display_data_t {
 	union  {
 		uint8_t raw[13];
 		struct {
-			uint8_t 	p5; // B0
-			uint8_t 	assist_level : 3;
-			uint8_t 	unknown : 4;
-			uint8_t 	lights : 1; // B1
+			uint8_t 	p5; // B0           // 0-64
+			uint8_t 	assist_level : 3;   // 0-5, 6 = cruise
+			uint8_t 	unknown : 4;        
+			uint8_t 	lights : 1; // B1   // 0-1
 			uint8_t 	wheel_size_msb : 3;
 			uint8_t 	max_speed_lsb : 5; // B2
-			uint8_t 	p1; // B3
-			uint8_t 	p2 : 3;
-			uint8_t 	p3 : 1;
-			uint8_t 	p4 : 1;
+			uint8_t 	p1; // B3           // 0-255                                    // Motor delta angle
+			uint8_t 	p2 : 3;             // 0-7                                      // phase swap
+			uint8_t 	p3 : 1;             // 0-1                                      // AUTO_PWM_OFF
+			uint8_t 	p4 : 1;             // 0-1                                      // PAS_INVERTED
 			uint8_t 	max_speed_msb : 1;
-			uint8_t 	wheel_size_lsb : 2; // B4
+			uint8_t 	wheel_size_lsb : 1; // note, wheel size is NOT 5 bit but 4;
+            uint8_t     l2 : 1;// B4        // 0-1                                      // AVOID_MOTOR_CYCLES_JITTER
 			uint8_t 	crc; // B5
-			uint8_t 	c2 : 3;
-			uint8_t		c1 : 3;
+			uint8_t 	c2 : 3;             // 0-1, sometimes 0-6 or 0-7                // ASSIST_LVL_AFFECTS_THROTTLE
+			uint8_t		c1 : 3;             // 0-7                                      // OFFROAD_ENABLED | BRAKE_DISABLES_OFFROAD | IDLE_DISABLES_OFFROAD
 			uint8_t 	unkown2 : 2; // B6
-			uint8_t 	c5 : 4;
+			uint8_t 	c5 : 4;             // 0-10                                     // 0-7 set WAVETABLES
 			uint8_t 	unknown4 : 1;
-			uint8_t 	c14 : 2;
-			uint8_t 	unknown3 : 1; // B7
-			uint8_t 	c12 : 5;
-			uint8_t 	c4 : 3; // B8
+			uint8_t 	c14 : 2;            // 1-3
+			uint8_t 	unknown3 : 1;// B7
+			uint8_t 	c12 : 5;            // 0-7                                      // DIGITAL_REGEN | SPEED_INFLUENCES_REGEN | SPEED_INFLUENCES_TORQUESENSOR
+			uint8_t 	c4 : 3; // B8       // 0-4, 4 sets c4_percentage
 			uint8_t 	B9; // B9
-			uint8_t 	unknown6 : 2;
-			uint8_t 	c13 : 3;
-			uint8_t 	c15 : 2;
+            uint8_t     l3 : 1;             // 0-1                                      // DYNAMIC_ASSIST_LEVEL
+			uint8_t 	unknown6 : 1;
+			uint8_t 	c13 : 3;            // 0-5
+			uint8_t 	c15 : 2;            // 0-2 (4-6)
 			uint8_t 	unknown5 : 1; // B10
-			uint8_t 	c4_percentage : 6;
-			uint8_t 	l1 : 2; // B11
+			uint8_t 	c4_percentage : 6;  // 0-40 (20-40)
+			uint8_t 	l1 : 2; // B11      // 0-3                                      // 0 = THROTTLE_WALK, 1 = THROTTLE_REGEN, 2 = THROTTLE_UNLIMITED, 3 = THROTTLE_UNLIMITED | THROTTLE_REGEN
 			uint8_t 	B12;
 		};
 	};
@@ -139,7 +141,7 @@ typedef struct LCD8_controller_data_t {
 			uint8_t crc; // B6
 			uint8_t mode_normal : 1;
 			uint8_t mode_throttle : 1;
-			uint8_t mode_unknown : 1;
+			uint8_t mode_cruise_icon : 1;
 			uint8_t mode_cruise : 1;
 			uint8_t mode_assist : 1;
 			uint8_t mode_brake : 1;

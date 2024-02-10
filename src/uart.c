@@ -84,7 +84,7 @@ void UART2_IRQHandler(void) __interrupt(UART2_IRQHANDLER) {
     }
 }
 
-void uart_send_if_avail() {
+void uart_send_if_avail(void) {
     // if there is something to send and we are not already sending
     if ((ui8_tx_fillpointer != ui8_tx_digestpointer)&&(UART2_GetFlagStatus(UART2_FLAG_TXE) != RESET)) {
         UART2_SendData8(ui8_uatx_buffer[ui8_tx_digestpointer++]);
@@ -112,7 +112,7 @@ void uart_fill_rx_packet_buffer(uint8_t *buffer, uint8_t bufferSize, uint8_t *bu
 void uart_init(void) {
     UART2_DeInit();
 #if defined TT || defined BLUOSEC
-    UART2_Init((uint32_t) 250000,
+    UART2_Init((uint32_t) 115200,
 #else
     UART2_Init((uint32_t) 9600,
 #endif
