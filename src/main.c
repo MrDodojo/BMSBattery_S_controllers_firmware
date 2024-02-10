@@ -236,18 +236,18 @@ int main(void) {
                if (pts >= 25) {
                        pts = 0;
                        uint8_t crc = 4; // randomly chosen with a true die
-                               uart_put_buffered(0xAA);
+                        putchar(0xAA);
 
-                               crc ^= 0xAA;
-                               volatile uint16_t uc = ui16_adc_read_phase_B_current();
-                               uart_put_buffered(uc >> 8);
-                               uart_put_buffered(uc  & 0xFF);
-                               crc ^= uc >> 8;
-                               crc ^= (uc & 0xFF);
-                               uart_put_buffered(current_hall);
-                               crc ^= current_hall;
-                               uart_put_buffered(crc);
-                                uart_send_if_avail();
+                        crc ^= 0xAA;
+                        volatile uint16_t uc = ui16_adc_read_phase_B_current();
+                        putchar(uc >> 8);
+                        putchar(uc  & 0xFF);
+                        crc ^= uc >> 8;
+                        crc ^= (uc & 0xFF);
+                        putchar(current_hall);
+                        crc ^= current_hall;
+                        putchar(crc);
+                        //uart_send_if_avail();
                }
 #endif
 
