@@ -44,7 +44,6 @@
 #define TQS_CALIB 0.0
 
 #define EEPROM_INIT_MAGIC_BYTE 173 // makes sure (chance of fail 1/255) eeprom is invalidated after flashing new config
-#define ACA_EXPERIMENTAL 128
 #define WALK_ASSIST_SPEED_LIMIT 6
 #define WALK_ASSIST_CURRENT_TARGET 5
 

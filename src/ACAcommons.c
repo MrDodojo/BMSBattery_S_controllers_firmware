@@ -26,6 +26,7 @@
 #include "ACAcommons.h"
 #include "ACAcontrollerState.h"
 
+static uint16_t ui16_temp;
 static uint8_t ui8_temp;
 
 uint8_t float2int(float in, float maxRange) {
@@ -42,7 +43,43 @@ float int2float(uint8_t in, float maxRange) {
 	return ((float) in / (float) ((float) 256 / (float) maxRange));
 }
 
-int32_t map(int32_t x, int32_t in_min, int32_t in_max, int32_t out_min, int32_t out_max) {
+/*
+ * since we need only achieve 16bit accuracy, the map functions can be sped up ba an order of magnitude (200 -> 20us)
+ * if an 8bit value is needed
+ */
+uint8_t map8u(uint8_t x, uint8_t in_min, uint8_t in_max, uint8_t out_min, uint8_t out_max) {
+	// if input is smaller/bigger than expected return the min/max out ranges value
+	if (x < in_min)
+		return out_min;
+	else if (x > in_max)
+		return out_max;
+
+		// map the input to the output range.
+		// round up if mapping bigger ranges to smaller ranges
+	else if ((in_max - in_min) > (out_max - out_min))
+		return ((uint16_t)(x - in_min)) * ((uint16_t) (out_max - out_min + 1)) / (((uint16_t)(in_max - in_min + 1)) + (uint16_t)out_min);
+		// round down if mapping smaller ranges to bigger ranges
+	else
+		return ((uint16_t)(x - in_min)) * ((uint16_t)(out_max - out_min)) / ((uint16_t)(in_max - in_min) + (uint16_t)out_min);
+}
+
+uint8_t map8ur(uint16_t x, uint8_t in_min, uint8_t in_max, uint8_t out_min, uint8_t out_max) {
+	// if input is smaller/bigger than expected return the min/max out ranges value
+	if (x < in_min)
+		return out_min;
+	else if (x > in_max)
+		return out_max;
+
+		// map the input to the output range.
+		// round up if mapping bigger ranges to smaller ranges
+	else if ((in_max - in_min) > (out_max - out_min))
+		return ((uint16_t)(x - in_min)) * ((uint16_t) (out_max - out_min + 1)) / (((uint16_t)(in_max - in_min + 1)) + (uint16_t)out_min);
+		// round down if mapping smaller ranges to bigger ranges
+	else
+		return ((uint16_t)(x - in_min)) * ((uint16_t)(out_max - out_min)) / ((uint16_t)(in_max - in_min) + (uint16_t)out_min);
+}
+
+int32_t map32(int32_t x, int32_t in_min, int32_t in_max, int32_t out_min, int32_t out_max) {
 	// if input is smaller/bigger than expected return the min/max out ranges value
 	if (x < in_min)
 		return out_min;
@@ -74,7 +111,7 @@ int32_t PI_control(uint16_t pv, uint16_t setpoint, uint8_t uint_PWM_Enable) {
 	if (float_i > 255) float_i = 255;
 	if (float_i < 0) float_i = 0;
 	
-	if (!uint_PWM_Enable && ((ui16_aca_experimental_flags & PWM_AUTO_OFF) == PWM_AUTO_OFF)) {
+	if (!uint_PWM_Enable && ((ui8_aca_experimental_flags_high & PWM_AUTO_OFF) == PWM_AUTO_OFF)) {
 		float_i = ui32_erps_filtered * flt_s_motor_constant - float_p;
 	}
 
@@ -170,10 +207,10 @@ void updateHallOrder(uint8_t hall_sensors) {
 }
 
 void updatePasDir(void) {
-	if (((ui16_aca_flags & TQ_SENSOR_MODE) == TQ_SENSOR_MODE)&&(ui16_time_ticks_between_pas_interrupt < timeout)) {
+	if (((ui8_aca_flags_high & TQ_SENSOR_MODE) == TQ_SENSOR_MODE)&&(ui16_time_ticks_between_pas_interrupt < timeout)) {
 		//only for Torquesensor Mode.
 		PAS_is_active = 1;
-	} else if (((ui16_aca_flags & TQ_SENSOR_MODE) != TQ_SENSOR_MODE) && (PAS_act > 3)) {
+	} else if (((ui8_aca_flags_high & TQ_SENSOR_MODE) != TQ_SENSOR_MODE) && (PAS_act > 3)) {
 		//set direction only if enough pulses in the right direction are detected.
 		PAS_is_active = 1;
 	} else {
@@ -237,14 +274,12 @@ void updateLight(void) {
 
 
 void updateRequestedTorque(void) {
-
-	ui16_momentary_throttle = (uint16_t) map(ui8_adc_read_throttle(), ADC_THROTTLE_MIN_VALUE, ADC_THROTTLE_MAX_VALUE, 0, SETPOINT_MAX_VALUE); //read in recent throttle value for throttle override
-
-	if (((ui16_aca_flags & TQ_SENSOR_MODE) != TQ_SENSOR_MODE)) {
+    ui8_momentary_throttle = (uint16_t) map8u(ui8_adc_read_throttle(), ADC_THROTTLE_MIN_VALUE, ADC_THROTTLE_MAX_VALUE, 0, SETPOINT_MAX_VALUE);
+	if (((ui8_aca_flags_high & TQ_SENSOR_MODE) != TQ_SENSOR_MODE)) {
 		ui16_throttle_accumulated -= ui16_throttle_accumulated >> 4;
 		ui16_throttle_accumulated += ui8_adc_read_throttle();
 		ui8_temp = ui16_throttle_accumulated >> 4; //read in value from adc
-		ui16_sum_throttle = (uint8_t) map(ui8_temp, ui8_throttle_min_range, ui8_throttle_max_range, 0, SETPOINT_MAX_VALUE); //map throttle to limits
+		ui16_sum_throttle = (uint8_t) map8u(ui8_temp, ui8_throttle_min_range, ui8_throttle_max_range, 0, SETPOINT_MAX_VALUE); //map throttle to limits
 	} else {
 
 		ui16_sum_torque = 0;
@@ -273,7 +308,7 @@ void checkPasInActivity(void) {
 		// updatePasStatus does not fire if pas inactive, so set interval to reasonably high value here
 		ui16_time_ticks_between_pas_interrupt = 64000L;
 		// also ensure torque array slowly resets
-		ui16_torque[ui8_torque_index] = (uint8_t) map(ui8_throttle_min_range, ui8_throttle_min_range, ui8_throttle_max_range, 0, SETPOINT_MAX_VALUE); //map throttle to limits
+		ui16_torque[ui8_torque_index] = (uint8_t) map8u(ui8_throttle_min_range, ui8_throttle_min_range, ui8_throttle_max_range, 0, SETPOINT_MAX_VALUE); //map throttle to limits
 		ui8_torque_index++;
 		if (ui8_torque_index > NUMBER_OF_PAS_MAGS - 1) {
 			ui8_torque_index = 0;
@@ -302,11 +337,11 @@ void updatePasStatus(void) {
 		ui16_time_ticks_between_pas_interrupt = ui16_time_ticks_for_pas_calculation; //save recent cadence
 		ui16_PAS_High = ui16_PAS_High_Counter;
 
-		if ((0 == (ui16_aca_flags & PAS_INVERTED)) && ((float) ui16_time_ticks_between_pas_interrupt / (float) ui16_PAS_High > flt_s_pas_threshold)) {
+		if ((0 == (ui8_aca_flags_low & PAS_INVERTED)) && ((float) ui16_time_ticks_between_pas_interrupt / (float) ui16_PAS_High > flt_s_pas_threshold)) {
 			if (PAS_act < 7) {
 				PAS_act++;
 			}
-		} else if ((PAS_INVERTED == (ui16_aca_flags & PAS_INVERTED)) && ((float) ui16_time_ticks_between_pas_interrupt / (float) ui16_PAS_High < flt_s_pas_threshold)) {
+		} else if ((PAS_INVERTED == (ui8_aca_flags_low & PAS_INVERTED)) && ((float) ui16_time_ticks_between_pas_interrupt / (float) ui16_PAS_High < flt_s_pas_threshold)) {
 			if (PAS_act < 7) {
 				PAS_act++;
 			}
@@ -317,9 +352,9 @@ void updatePasStatus(void) {
 		}
 
 
-		if (((ui16_aca_flags & TQ_SENSOR_MODE) == TQ_SENSOR_MODE)) {
-			ui8_temp = ui8_adc_read_throttle(); //read in recent torque value
-			ui16_torque[ui8_torque_index] = (uint8_t) map(ui8_temp, ui8_throttle_min_range, ui8_throttle_max_range, 0, SETPOINT_MAX_VALUE); //map throttle to limits
+		if (((ui8_aca_flags_high & TQ_SENSOR_MODE) == TQ_SENSOR_MODE)) {
+			ui16_temp = ui16_adc_read_x4_value(); //read in recent torque value
+			ui16_torque[ui8_torque_index] = (uint8_t) map32(ui16_temp, ui8_throttle_min_range, ui8_throttle_max_range, 0, SETPOINT_MAX_VALUE); //map throttle to limits
 
 			ui8_torque_index++;
 			if (ui8_torque_index > NUMBER_OF_PAS_MAGS - 1) {
@@ -361,12 +396,12 @@ void updateSlowLoopStates(void) {
 		ui8_lockstatus = 255;
 	}
 	
-	if (((ui16_aca_flags & IDLE_DISABLES_OFFROAD) == IDLE_DISABLES_OFFROAD) && (ui8_offroad_state > 4) && (ui16_idle_counter > 3000)) {
+	if (((ui8_aca_flags_low & IDLE_DISABLES_OFFROAD) == IDLE_DISABLES_OFFROAD) && (ui8_offroad_state > 4) && (ui16_idle_counter > 3000)) {
 		//disable after 60 seconds idle
 		ui8_offroad_state = 0;
 	}
 	
-	if (((ui16_aca_flags & BRAKE_DISABLES_OFFROAD) == BRAKE_DISABLES_OFFROAD) && (ui8_offroad_state > 4)) {
+	if (((ui8_aca_flags_low & BRAKE_DISABLES_OFFROAD) == BRAKE_DISABLES_OFFROAD) && (ui8_offroad_state > 4)) {
 		// if disabling is enabled :)
 		if (!GPIO_ReadInputPin(BRAKE__PORT, BRAKE__PIN)) {
 			ui8_offroad_counter++;
@@ -380,7 +415,7 @@ void updateSlowLoopStates(void) {
 	}
 
 	// check if offroad mode is enabled
-	if (0 == (ui16_aca_flags & OFFROAD_ENABLED)) {
+	if (0 == (ui8_aca_flags_low & OFFROAD_ENABLED)) {
 		return;
 	}
 

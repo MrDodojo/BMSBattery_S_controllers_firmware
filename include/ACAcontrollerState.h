@@ -39,7 +39,7 @@ extern uint8_t PAS_act;
 extern uint8_t PAS_is_active;
 extern uint16_t ui16_sum_torque;
 extern uint16_t ui16_sum_throttle;
-extern uint16_t ui16_momentary_throttle;
+extern uint16_t ui8_momentary_throttle;
 extern uint8_t ui8_offroad_state;
 extern uint32_t uint32_current_target;
 extern uint16_t ui16_setpoint;
@@ -101,11 +101,15 @@ extern uint16_t ui16_no_pass_counter;
 extern uint16_t ui16_passcode;
 extern uint8_t ui8_lockstatus;
 
-extern uint16_t ui16_aca_flags;
-extern uint16_t ui16_aca_experimental_flags;
+extern uint8_t ui8_aca_flags_low;
+extern uint8_t ui8_aca_flags_high;
+extern uint8_t ui8_aca_experimental_flags_low;
+extern uint8_t ui8_aca_experimental_flags_high;
 
 extern uint16_t ui16_torque[NUMBER_OF_PAS_MAGS];
 extern uint8_t ui8_torque_index;
+
+extern uint32_t uint32_torquesensorCalibration;
 
 extern uint16_t ui16_time_ticks_between_pas_interrupt_smoothed; // for filtering of PAS value
 extern float flt_current_PAS_fraction;
@@ -152,98 +156,56 @@ typedef enum {
 	SIGNAL_SPEEDLIMIT_CHANGED = ((uint8_t) 0x00),
 
 } ICC_SIGNALS;
-#ifndef DISPLAY_TYPE_KT_LCD8
+
 typedef enum {
-	ASSIST_LVL_AFFECTS_THROTTLE = ((uint16_t) 1),
-	OFFROAD_ENABLED = ((uint16_t) 2),
-	BRAKE_DISABLES_OFFROAD = ((uint16_t) 4),
+	ASSIST_LVL_AFFECTS_THROTTLE = ((uint8_t) 0x01),
+	OFFROAD_ENABLED = ((uint8_t) 0x02),
+	BRAKE_DISABLES_OFFROAD = ((uint8_t) 0x04),
+	IDLE_DISABLES_OFFROAD = ((uint8_t) 0x08),
 
-	DIGITAL_REGEN = ((uint16_t) 8),
-	SPEED_INFLUENCES_REGEN = ((uint16_t) 16),
-	SPEED_INFLUENCES_TORQUESENSOR = ((uint16_t) 32),
-	PAS_INVERTED = ((uint16_t) 64),
+	DIGITAL_REGEN = ((uint8_t) 0x10),
+	SPEED_INFLUENCES_REGEN = ((uint8_t) 0x20),
+	SPEED_INFLUENCES_TORQUESENSOR = ((uint8_t) 0x40),
 
-	DUMMY_ALWAYS_ON = ((uint16_t) 128),
-
-	BYPASS_LOW_SPEED_REGEN_PI_CONTROL = ((uint16_t) 256),
-
-	DYNAMIC_ASSIST_LEVEL = ((uint16_t) 512),
-	
-	POWER_BASED_CONTROL= ((uint16_t) 1024),
-	TQ_SENSOR_MODE = ((uint16_t) 2048),
-	ANGLE_CORRECTION_ENABLED = ((uint16_t) 4096),
-	EXTERNAL_SPEED_SENSOR = ((uint16_t) 8192),	
-	IDLE_DISABLES_OFFROAD = ((uint16_t) 16384)
-} ACA_FLAGS;
-
-#else
-typedef enum {
-	ASSIST_LVL_AFFECTS_THROTTLE = ((uint16_t) 0x0001),
-	OFFROAD_ENABLED = ((uint16_t) 0x0002),
-	BRAKE_DISABLES_OFFROAD = ((uint16_t) 0x0004),
-	IDLE_DISABLES_OFFROAD = ((uint16_t) 0x0008),
-
-	DIGITAL_REGEN = ((uint16_t) 0x0010),
-	SPEED_INFLUENCES_REGEN = ((uint16_t) 0x0020),
-	SPEED_INFLUENCES_TORQUESENSOR = ((uint16_t) 0x0040),
-
-	PAS_INVERTED = ((uint16_t) 0x0080),
-
-	DUMMY_ALWAYS_ON = ((uint16_t) 0x0100),
-
-	BYPASS_LOW_SPEED_REGEN_PI_CONTROL = ((uint16_t) 0x0200),
-
-	DYNAMIC_ASSIST_LEVEL = ((uint16_t) 0x0400),
-	
-	POWER_BASED_CONTROL= ((uint16_t) 0x0800),
-	TQ_SENSOR_MODE = ((uint16_t) 0x1000),
-	ANGLE_CORRECTION_ENABLED = ((uint16_t) 0x2000),
-	EXTERNAL_SPEED_SENSOR = ((uint16_t) 0x4000),	
+	PAS_INVERTED = ((uint8_t) 0x80),
 			
-} ACA_FLAGS;
-#endif
+} ACA_FLAGS_LOW;
 
-#ifndef DISPLAY_TYPE_KT_LCD8
+typedef enum {
+	DUMMY_ALWAYS_ON = ((uint8_t) 0x01),
+	BYPASS_LOW_SPEED_REGEN_PI_CONTROL = ((uint8_t) 0x02),
+	DYNAMIC_ASSIST_LEVEL = ((uint8_t) 0x04),
+	POWER_BASED_CONTROL= ((uint8_t) 0x08),
+	TQ_SENSOR_MODE = ((uint8_t) 0x10),
+	ANGLE_CORRECTION_ENABLED = ((uint8_t) 0x20),
+	EXTERNAL_SPEED_SENSOR = ((uint8_t) 0x40),	
+} ACA_FLAGS_HIGH;
+
 typedef enum {
 
-	DC_STATIC_ZERO = ((uint16_t) 1),
-	AVOID_MOTOR_CYCLES_JITTER = ((uint16_t) 2),
-	DISABLE_INTERPOLATION = ((uint16_t) 4),
-	DISABLE_60_DEG_INTERPOLATION = ((uint16_t) 8),
-	SWITCH_360_DEG_INTERPOLATION = ((uint16_t) 16),
-	USE_ALTERNATE_WAVETABLE = ((uint16_t) 32),
-	USE_ALTERNATE_WAVETABLE_B = ((uint16_t) 64),
-	DUMMY_EXP_ALWAYS_ON = ((uint16_t) 128),
-	HIGH_SPEED_MOTOR = ((uint16_t) 256),
-	PWM_AUTO_OFF = ((uint16_t) 1024),
-			
-    THROTTLE_REGEN = ((uint16_t) 0x1000),
-    THROTTLE_ALLOWED_FOR_WALK = ((uint16_t) 0x2000),
-    THROTTLE_UNRESTRICTED = ((uint16_t) 0x4000),
-    USE_ALTERNATE_WAVETABLE_C = ((uint16_t) 0x8000),
-} ACA_EXPERIMENTAL_FLAGS;
-#else
+	DC_STATIC_ZERO = ((uint8_t) 0x01),
+	AVOID_MOTOR_CYCLES_JITTER = ((uint8_t) 0x02),
+	DISABLE_INTERPOLATION = ((uint8_t) 0x04),
+	DISABLE_60_DEG_INTERPOLATION = ((uint8_t) 0x08),
+	SWITCH_360_DEG_INTERPOLATION = ((uint8_t) 0x10),
+	USE_ALTERNATE_WAVETABLE = ((uint8_t) 0x20),
+	USE_ALTERNATE_WAVETABLE_B = ((uint8_t) 0x40),
+    USE_ALTERNATE_WAVETABLE_C = ((uint8_t) 0x80),
+	
+} ACA_EXPERIMENTAL_FLAGS_LOW;
+
 typedef enum {
+    HIGH_SPEED_MOTOR = ((uint8_t) 0x01),
+	PWM_AUTO_OFF = ((uint8_t) 0x02),
+    DUMMY_EXP_ALWAYS_ON = ((uint8_t) 0x04),		
+    THROTTLE_REGEN = ((uint8_t) 0x08),
+    THROTTLE_ALLOWED_FOR_WALK = ((uint8_t) 0x10),
+    THROTTLE_UNRESTRICTED = ((uint8_t) 0x20),
+} ACA_EXPERIMENTAL_FLAGS_HIGH;
 
-	DC_STATIC_ZERO = ((uint16_t) 0x0001),
-	AVOID_MOTOR_CYCLES_JITTER = ((uint16_t) 0x0002),
-	DISABLE_INTERPOLATION = ((uint16_t) 0x0004),
-	DISABLE_60_DEG_INTERPOLATION = ((uint16_t) 0x0008),
-	SWITCH_360_DEG_INTERPOLATION = ((uint16_t) 0x0010),
-	USE_ALTERNATE_WAVETABLE = ((uint16_t) 0x0020),
-	USE_ALTERNATE_WAVETABLE_B = ((uint16_t) 0x0040),
-    USE_ALTERNATE_WAVETABLE_C = ((uint16_t) 0x0080),
-	HIGH_SPEED_MOTOR = ((uint16_t) 0x0010),
-	PWM_AUTO_OFF = ((uint16_t) 0x0020),
-    DUMMY_EXP_ALWAYS_ON = ((uint16_t) 0x0040),		
-
-    THROTTLE_REGEN = ((uint16_t) 0x0100),
-    THROTTLE_ALLOWED_FOR_WALK = ((uint16_t) 0x0200),
-    THROTTLE_UNRESTRICTED = ((uint16_t) 0x0400),
-} ACA_EXPERIMENTAL_FLAGS;
-#endif
-
-#define ACA (BRAKE_DISABLES_OFFROAD | DIGITAL_REGEN | SPEED_INFLUENCES_REGEN | DYNAMIC_ASSIST_LEVEL | ANGLE_CORRECTION_ENABLED)
-
+#define ACA_LOW  (BRAKE_DISABLES_OFFROAD | DIGITAL_REGEN | SPEED_INFLUENCES_REGEN)
+#define ACA_HIGH (DYNAMIC_ASSIST_LEVEL | ANGLE_CORRECTION_ENABLED)
+#define ACA_EXPERIMENTAL_LOW (USE_ALTERNATE_WAVETABLE_C | USE_ALTERNATE_WAVETABLE)
+#define ACA_EXPERIMENTAL_HIGH (PWM_AUTO_OFF)
 #endif /* BOCONTROLLERSTATE_H */
 

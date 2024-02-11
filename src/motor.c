@@ -201,7 +201,7 @@ static void updateCorrection(uint8_t reverse) {
 		ui16_ADC_iq_current = ui16_ADC_iq_current_accumulated >> 3; // this value is regualted to be zero by FOC
 	}
 
-	if ((ui16_aca_flags & ANGLE_CORRECTION_ENABLED) != ANGLE_CORRECTION_ENABLED) {
+	if ((ui8_aca_flags_high & ANGLE_CORRECTION_ENABLED) != ANGLE_CORRECTION_ENABLED) {
 		ui8_position_correction_value = 127; //set advance angle to neutral value
 		return;
 	}
@@ -272,11 +272,11 @@ void motor_fast_loop(void) {
 
 	//  // calculate the interpolation angle
 	//  // interpolation seems a problem when motor starts, so avoid to do it at very low speed
-	if (((ui8_possible_motor_state == MOTOR_STATE_RUNNING_INTERPOLATION_60)||(ui8_possible_motor_state == MOTOR_STATE_RUNNING_INTERPOLATION_360)) && ((ui16_aca_experimental_flags & DISABLE_INTERPOLATION) != DISABLE_INTERPOLATION)) {
+	if (((ui8_possible_motor_state == MOTOR_STATE_RUNNING_INTERPOLATION_60)||(ui8_possible_motor_state == MOTOR_STATE_RUNNING_INTERPOLATION_360)) && ((ui8_aca_experimental_flags_low & DISABLE_INTERPOLATION) != DISABLE_INTERPOLATION)) {
 
 		if (
-				((ui16_aca_experimental_flags & DISABLE_60_DEG_INTERPOLATION) == DISABLE_60_DEG_INTERPOLATION)||
-				(((ui16_aca_experimental_flags & SWITCH_360_DEG_INTERPOLATION) == SWITCH_360_DEG_INTERPOLATION) && (ui8_possible_motor_state == MOTOR_STATE_RUNNING_INTERPOLATION_360))
+				((ui8_aca_experimental_flags_low & DISABLE_60_DEG_INTERPOLATION) == DISABLE_60_DEG_INTERPOLATION)||
+				(((ui8_aca_experimental_flags_low & SWITCH_360_DEG_INTERPOLATION) == SWITCH_360_DEG_INTERPOLATION) && (ui8_possible_motor_state == MOTOR_STATE_RUNNING_INTERPOLATION_360))
 				){
 
 			if (ui16_PWM_cycles_counter>255){
@@ -313,7 +313,7 @@ void motor_fast_loop(void) {
 		ui8_sinetable_precalc = ui8_interpolation_start_position + ui8_s_motor_angle + ui8_position_correction_value -127 + ui8_interpolation_angle;
 	}
 
-	if ((ui16_aca_experimental_flags & AVOID_MOTOR_CYCLES_JITTER) != AVOID_MOTOR_CYCLES_JITTER){
+	if ((ui8_aca_experimental_flags_low & AVOID_MOTOR_CYCLES_JITTER) != AVOID_MOTOR_CYCLES_JITTER){
 		ui8_sinetable_position = ui8_sinetable_precalc;
 	}else{
 		// if we would go back slightly, stay at current position; if we would go back a lot, still apply (startup/coast/corner cases)
@@ -343,8 +343,7 @@ void motor_fast_loop(void) {
 		//ui8_variableDebugA = ui8_assumed_motor_position;
 		//ui8_variableDebugB = ui8_assumed_motor_position + ui8_position_correction_value - 127;
 
-        //updateCorrection(reverse);
-        updateCorrection(0);
+        updateCorrection(reverse);
 	}
 
 

@@ -36,7 +36,7 @@ uint8_t cruise_control_enabled(void) {
 uint8_t cruise_control_regen(uint16_t erps) {
 	uint8_t PAS = PAS_is_active && (ui16_time_ticks_for_pas_calculation < timeout);
 	if (!cruise_control_speed) return 0;
-	if ((ui16_momentary_throttle) || (PAS)) return 0;
+	if ((ui8_momentary_throttle) || (PAS)) return 0;
 	int16_t extra_speed = erps - (cruise_control_speed + cc_domain_spd);
 	if (extra_speed < 0) return 0;
 	if (extra_speed > cc_domain_spd) return 100;
@@ -182,7 +182,7 @@ void cruise_control_update(void)
 #ifdef USE_CRUISE_REVERSE
 		if ( (0 == ui16_virtual_erps_speed) && (brake_state) &&
 			(!cruise_btn_state) && (cruise_btn_ctr == 2) &&
-			(ui16_momentary_throttle) ) {
+			(ui8_momentary_throttle) ) {
 			motor_direction_reverse = 1;
 		}
 		// dont enable cruise while reversing...

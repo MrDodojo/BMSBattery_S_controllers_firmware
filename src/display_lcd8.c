@@ -73,7 +73,7 @@ void send_message(void) {
 	//if (pas_is_set ()) { ui8_moving_indication |= (1 << 4); }
 
 
-	if (((ui16_aca_flags & EXTERNAL_SPEED_SENSOR) == EXTERNAL_SPEED_SENSOR)) {
+	if (((ui8_aca_flags_high & EXTERNAL_SPEED_SENSOR) == EXTERNAL_SPEED_SENSOR)) {
 		if (ui16_time_ticks_between_speed_interrupt > 65000) {
 			ui16_wheel_period_ms = 4500;
 		} else {
@@ -205,29 +205,15 @@ void digestLcdValues(void) {
 	ui8_walk_assist = (lcd_data.assist_level == 6);
 	// added by DerBastler Light On/Off
 	light_stat = (light_stat&~128) | (lcd_data.lights << 7); // only update 7th bit, 1st bit is current status
-	
-	if (lcd_data.max_speed != ui8_speedlimit_kph) {
-		ui8_speedlimit_kph = lcd_data.max_speed;
-		eeprom_write(OFFSET_MAX_SPEED_DEFAULT, lcd_data.max_speed);
-	}
 
-/*	
-typedef enum {
-
-	DC_STATIC_ZERO = ((uint16_t) 1),
-	AVOID_MOTOR_CYCLES_JITTER = ((uint16_t) 2),
-	DISABLE_INTERPOLATION = ((uint16_t) 4),
-	DISABLE_60_DEG_INTERPOLATION = ((uint16_t) 8),
-	SWITCH_360_DEG_INTERPOLATION = ((uint16_t) 16),
-	USE_ALTERNATE_WAVETABLE = ((uint16_t) 32),
-	USE_ALTERNATE_WAVETABLE_B = ((uint16_t) 64),
-	DUMMY_EXP_ALWAYS_ON = ((uint16_t) 128),
-	HIGH_SPEED_MOTOR = ((uint16_t) 256),
-	PWM_AUTO_OFF = ((uint16_t) 1024),
-			
-} ACA_EXPERIMENTAL_FLAGS;*/
-    uint16_t old_experimental = ui16_aca_experimental_flags;
-    uint16_t old_aca = ui16_aca_flags;
+	/* if (lcd_data.max_speed != ui8_speedlimit_kph) { */
+    /*     putchar(lcd_data.max_speed); */
+    /*     putchar(ui8_speedlimit_kph); */
+	/* 	ui8_speedlimit_kph = lcd_data.max_speed; */
+	/* 	eeprom_write(OFFSET_MAX_SPEED_DEFAULT, lcd_data.max_speed); */
+	/* } */
+    uint8_t update_aca = 0;
+    uint8_t update_exp = 0;
 
 	ui8_s_motor_angle = lcd_data.p1;	
 	
@@ -237,79 +223,88 @@ typedef enum {
         pwm_duty_cycle_controller();
     }
 
-	if (lcd_data.p3) {
-		ui16_aca_experimental_flags |= PWM_AUTO_OFF;
-	} else {
-		ui16_aca_experimental_flags &= ~PWM_AUTO_OFF;
+	if (lcd_data.p3 != (ui8_aca_experimental_flags_high >> 1) & 0x01) {
+		ui8_aca_experimental_flags_high &= ~PWM_AUTO_OFF;
+		ui8_aca_experimental_flags_high |= lcd_data.p3 << 1;
+        update_exp = 1;
 	}
 
-	if (lcd_data.p4) {
-		ui16_aca_flags |= PAS_INVERTED;
-	} else {
-		ui16_aca_flags &= ~PAS_INVERTED;
+	if (lcd_data.p4 != (ui8_aca_flags_low >> 7)) {
+		ui8_aca_flags_low &= ~PAS_INVERTED;
+		ui8_aca_flags_low |= lcd_data.p4 << 7;
+        update_aca = 1;
 	}
 	
-    if (lcd_data.c1 != ((old_aca >> 1) & 0x07)) {
-		ui16_aca_flags &= ~(OFFROAD_ENABLED | BRAKE_DISABLES_OFFROAD | IDLE_DISABLES_OFFROAD);
-        ui16_aca_flags |= lcd_data.c1 << 1;
+    if (lcd_data.c1 != ((ui8_aca_flags_low >> 1) & 0x07)) {
+		ui8_aca_flags_low &= ~(OFFROAD_ENABLED | BRAKE_DISABLES_OFFROAD | IDLE_DISABLES_OFFROAD);
+        ui8_aca_flags_low |= lcd_data.c1 << 1;
+        update_aca = 1;
     }
 
-	if (lcd_data.c2) {
-		ui16_aca_flags |= ASSIST_LVL_AFFECTS_THROTTLE;
-	} else {
-		ui16_aca_flags &= ~ASSIST_LVL_AFFECTS_THROTTLE;
+	if (lcd_data.c2 != (ui8_aca_flags_low & 0x01)) {
+		ui8_aca_flags_low &= ~ASSIST_LVL_AFFECTS_THROTTLE;
+		ui8_aca_flags_low |= lcd_data.c2;
+        update_aca = 1;
 	}
 
-    if (lcd_data.c5 != ((old_experimental >> 5) & 0x07)) {
-		ui16_aca_experimental_flags &= ~(USE_ALTERNATE_WAVETABLE | USE_ALTERNATE_WAVETABLE_B | USE_ALTERNATE_WAVETABLE_C);
-        ui16_aca_experimental_flags |= (lcd_data.c5 & 0x07) << 5;
+    
+    if (lcd_data.c5 != ((ui8_aca_experimental_flags_low >> 5) & 0x07)) {
+		ui8_aca_experimental_flags_low &= ~(USE_ALTERNATE_WAVETABLE | USE_ALTERNATE_WAVETABLE_B | USE_ALTERNATE_WAVETABLE_C);
+        ui8_aca_experimental_flags_low |= (lcd_data.c5 & 0x07) << 5;
+        update_exp = 1;
     }
 
-    if (lcd_data.c12 != ((old_aca >> 4) & 0x07)) {
-		ui16_aca_flags &= ~(DIGITAL_REGEN | SPEED_INFLUENCES_REGEN | SPEED_INFLUENCES_TORQUESENSOR);
-        ui16_aca_flags |= lcd_data.c12 << 4;
+    if (lcd_data.c12 != ((ui8_aca_flags_low >> 4) & 0x07)) {
+		ui8_aca_flags_low &= ~(DIGITAL_REGEN | SPEED_INFLUENCES_REGEN | SPEED_INFLUENCES_TORQUESENSOR);
+        ui8_aca_flags_low |= lcd_data.c12 << 4;
+        update_aca = 1;
     }
 
-    if (lcd_data.l1 != ((ui16_aca_experimental_flags >> 8) & 0x03)) {
-        ui16_aca_experimental_flags &= ~(THROTTLE_ALLOWED_FOR_WALK |  THROTTLE_REGEN | THROTTLE_UNRESTRICTED);
+    if (lcd_data.l1 != ((ui8_aca_experimental_flags_high >> 3) & 0x03)) {
+        ui8_aca_experimental_flags_high &= ~(THROTTLE_ALLOWED_FOR_WALK |  THROTTLE_REGEN | THROTTLE_UNRESTRICTED);
         switch (lcd_data.l1) {
             case 0:
             default:
-                ui16_aca_experimental_flags |= THROTTLE_ALLOWED_FOR_WALK;
+                ui8_aca_experimental_flags_high |= THROTTLE_ALLOWED_FOR_WALK;
                 break;
             case 1:
-                ui16_aca_experimental_flags |= THROTTLE_REGEN;
+                ui8_aca_experimental_flags_high |= THROTTLE_REGEN;
                 break;
 
             case 2:
-                ui16_aca_experimental_flags |= THROTTLE_UNRESTRICTED;
+                ui8_aca_experimental_flags_high |= THROTTLE_UNRESTRICTED;
                 break;
             case 3:
-                ui16_aca_experimental_flags |= THROTTLE_UNRESTRICTED | THROTTLE_REGEN;
+                ui8_aca_experimental_flags_high |= THROTTLE_UNRESTRICTED | THROTTLE_REGEN;
                 break;
         }
+        update_exp = 1;
     }
 
-	if (lcd_data.l2) {
-		ui16_aca_experimental_flags |= AVOID_MOTOR_CYCLES_JITTER;
-	} else {
-		ui16_aca_experimental_flags &= ~AVOID_MOTOR_CYCLES_JITTER;
+	if (lcd_data.l2 != ((ui8_aca_experimental_flags_low >> 1) & 0x01)) {
+		ui8_aca_experimental_flags_low &= ~AVOID_MOTOR_CYCLES_JITTER;
+		ui8_aca_experimental_flags_low |= lcd_data.l2 << 1;
+        update_exp = 1;
 	}
 
-	if (lcd_data.l3) {
-		ui16_aca_experimental_flags |= DYNAMIC_ASSIST_LEVEL;
-	} else {
-		ui16_aca_experimental_flags &= ~DYNAMIC_ASSIST_LEVEL;
+	if (lcd_data.l3 != ((ui8_aca_flags_high >> 2) & 0x01)) {
+		ui8_aca_flags_high &= ~DYNAMIC_ASSIST_LEVEL;
+		ui8_aca_flags_high |= lcd_data.l3 << 2;
+        update_aca = 1;
 	}
 
-    if (ui16_aca_flags != old_aca) {
-		eeprom_write(OFFSET_ACA_FLAGS_HIGH_BYTE, (ui16_aca_flags >> 8)& 0xFF);
-		eeprom_write(OFFSET_ACA_FLAGS, ui16_aca_flags & 0xFF);
+    if (update_aca) {
+        debug_pin_set();
+		eeprom_write(OFFSET_ACA_FLAGS_HIGH_BYTE, ui8_aca_flags_high);
+		eeprom_write(OFFSET_ACA_FLAGS, ui8_aca_flags_low);
+        debug_pin_reset();
     }
 
-    if (ui16_aca_experimental_flags != old_experimental) {
-		eeprom_write(OFFSET_ACA_EXPERIMENTAL_FLAGS_HIGH_BYTE, (ui16_aca_experimental_flags >> 8)& 0xFF);
-		eeprom_write(OFFSET_ACA_EXPERIMENTAL_FLAGS, ui16_aca_experimental_flags & 0xFF);
+    if (update_exp) {
+        debug_pin_set();
+		eeprom_write(OFFSET_ACA_EXPERIMENTAL_FLAGS_HIGH_BYTE, ui8_aca_experimental_flags_high);
+		eeprom_write(OFFSET_ACA_EXPERIMENTAL_FLAGS, ui8_aca_experimental_flags_low);
+        debug_pin_reset();
     }
 }
 
@@ -319,7 +314,7 @@ void display_update(void) {
 
 	// fill local buffer from uart ringbuffer
 	// new: we put in a packed union so we do not have to mess with calculating the offset
-	uart_fill_rx_packet_buffer(lcd_data.raw, 13, &ui8_UARTCounter);
+    uart_fill_rx_packet_buffer(lcd_data.raw, 13, &ui8_UARTCounter);
 	
 	// Check for reception of complete message
 	if ((ui8_UARTCounter > 12)) { // && (lcd_data.B12 == 0x0E)) {
@@ -332,7 +327,6 @@ void display_update(void) {
 			if (ui8_j == 5) continue; // don't xor B5 
 			ui8_crc ^= lcd_data.raw[ui8_j];
 		}
-
 		// see if CRC is ok
 		if (((ui8_crc ^ 10) == lcd_data.crc) || // some versions of CRC LCD5 (??)
                                 ((ui8_crc ^ 1) == lcd_data.crc) || // CRC LCD3 (tested with KT36/48SVPR, from PSWpower)
@@ -381,7 +375,7 @@ void display_update(void) {
 				ui8_cruiseThrottleSetting = ui16_sum_throttle;
 				ui8_cruiseMinThrottle = ui8_cruiseThrottleSetting;
 			}
-
+    
 			digestLcdValues();
 			send_message();
 		}

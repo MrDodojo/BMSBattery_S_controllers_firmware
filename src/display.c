@@ -70,7 +70,7 @@ void send_message(void) {
 	//if (pas_is_set ()) { ui8_moving_indication |= (1 << 4); }
 
 
-	if (((ui16_aca_flags & EXTERNAL_SPEED_SENSOR) == EXTERNAL_SPEED_SENSOR)) {
+	if (((ui8_aca_flags_high & EXTERNAL_SPEED_SENSOR) == EXTERNAL_SPEED_SENSOR)) {
 		if (ui16_time_ticks_between_speed_interrupt > 65000) {
 			ui16_wheel_period_ms = 4500;
 		} else {

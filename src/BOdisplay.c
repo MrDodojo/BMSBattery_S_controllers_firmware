@@ -124,8 +124,8 @@ void addConfigStateInfosA(void) {
 	addPayload(CODE_MAX_SPEED_DEFAULT, ui8_speedlimit_kph);
 	addPayload(CODE_MAX_SPEED_WITHOUT_PAS, ui8_speedlimit_without_pas_kph);
 	addPayload(CODE_MAX_SPEED_WITH_THROTTLE_OVERRIDE, ui8_speedlimit_with_throttle_override_kph);
-	addPayload(CODE_ACA_FLAGS_HIGH_BYTE, ui16_aca_flags >> 8);
-	addPayload(CODE_ACA_FLAGS, ui16_aca_flags);
+	addPayload(CODE_ACA_FLAGS_HIGH_BYTE, ui8_aca_flags_high);
+	addPayload(CODE_ACA_FLAGS, ui8_aca_flags_low);
 	addPayload(CODE_THROTTLE_MIN_RANGE, ui8_throttle_min_range);
 	addPayload(CODE_THROTTLE_MAX_RANGE, ui8_throttle_max_range);
 	addPayload(CODE_MOTOR_SPECIFIC_ANGLE, ui8_s_motor_angle);
@@ -163,8 +163,8 @@ void addConfigStateInfosB(void) {
 	addPayload(CODE_ADC_BATTERY_VOLTAGE_MIN, ui8_s_battery_voltage_min);
 	addPayload(CODE_ADC_BATTERY_VOLTAGE_MAX, ui8_s_battery_voltage_max);
 
-	addPayload(CODE_ACA_EXPERIMENTAL_FLAGS_HIGH_BYTE, ui16_aca_experimental_flags >> 8);
-	addPayload(CODE_ACA_EXPERIMENTAL_FLAGS, ui16_aca_experimental_flags);
+	addPayload(CODE_ACA_EXPERIMENTAL_FLAGS_HIGH_BYTE, ui8_aca_experimental_flags_high);
+	addPayload(CODE_ACA_EXPERIMENTAL_FLAGS, ui8_aca_experimental_flags_low);
 	
 	addPayload(CODE_MOTOR_CONSTANT, float2int(flt_s_motor_constant, 4.0));
 	// 12 more elements left/avail (max30)
@@ -211,8 +211,8 @@ void addDetailStateInfos(void) {
 	addPayload(CODE_CORRECTION_VALUE, ui8_position_correction_value);
 	addPayload(CODE_PHASE_CURRENT, ui16_ADC_iq_current >> 2);
 	//addPayload(CODE_PHASE_CURRENT, ui16_ADC_iq_current_accumulated);
-	addPayload(CODE_THROTTLE_HIGH_BYTE, ui16_momentary_throttle >> 8);
-	addPayload(CODE_THROTTLE, ui16_momentary_throttle);
+	addPayload(CODE_THROTTLE_HIGH_BYTE, ui8_momentary_throttle >> 8);
+	addPayload(CODE_THROTTLE, ui8_momentary_throttle);
 	addPayload(CODE_CURRENT_TARGET_HIGH_BYTE, uint32_current_target >> 8);
 	addPayload(CODE_CURRENT_TARGET, uint32_current_target);
 	addPayload(CODE_CURRENT_RAMP_HIGH_BYTE, ui16_time_ticks_between_pas_interrupt_smoothed >> 8);
@@ -318,22 +318,24 @@ void digestConfigRequest(uint8_t configAddress, uint8_t requestedCodeLowByte, ui
 			}
 			break;
 		case CODE_ACA_FLAGS:
-			ui16_aca_flags = ((uint16_t) requestedValueHighByte << 8)+(uint16_t) requestedValue;
+			ui8_aca_flags_high = requestedValueHighByte;
+			ui8_aca_flags_low = requestedValue;
 			if (configAddress == EEPROM_ADDRESS) {
 				eeprom_write(OFFSET_ACA_FLAGS_HIGH_BYTE, requestedValueHighByte);
 				eeprom_write(OFFSET_ACA_FLAGS, requestedValue);
 			}
-			addPayload(CODE_ACA_FLAGS_HIGH_BYTE, ui16_aca_flags >> 8);
-			addPayload(requestedCodeLowByte, ui16_aca_flags);
+			addPayload(CODE_ACA_FLAGS_HIGH_BYTE, ui8_aca_flags_high);
+			addPayload(requestedCodeLowByte, ui8_aca_flags_low);
 			break;
 		case CODE_ACA_EXPERIMENTAL_FLAGS:
-			ui16_aca_experimental_flags = ((uint16_t) requestedValueHighByte << 8)+(uint16_t) requestedValue;
+			ui8_aca_experimental_flags_high = requestedValueHighByte;
+			ui8_aca_experimental_flags_low = requestedValue;
 			if (configAddress == EEPROM_ADDRESS) {
 				eeprom_write(OFFSET_ACA_EXPERIMENTAL_FLAGS_HIGH_BYTE, requestedValueHighByte);
 				eeprom_write(OFFSET_ACA_EXPERIMENTAL_FLAGS, requestedValue);
 			}
-			addPayload(CODE_ACA_EXPERIMENTAL_FLAGS_HIGH_BYTE, ui16_aca_experimental_flags >> 8);
-			addPayload(requestedCodeLowByte, ui16_aca_experimental_flags);
+			addPayload(CODE_ACA_EXPERIMENTAL_FLAGS_HIGH_BYTE, ui8_aca_experimental_flags_high);
+			addPayload(requestedCodeLowByte, ui8_aca_experimental_flags_low);
 			break;
 		case CODE_MAX_BAT_CURRENT:
 			ui16_battery_current_max_value = ((uint16_t) requestedValueHighByte << 8)+(uint16_t) requestedValue;

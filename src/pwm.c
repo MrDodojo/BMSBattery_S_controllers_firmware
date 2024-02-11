@@ -149,13 +149,13 @@ uint8_t fetch_table_value(uint8_t table_pos_in) {
 	}
 
 	if (ui8_dynamic_motor_state == MOTOR_STATE_RUNNING_NO_INTERPOLATION) {
-        if (ui16_aca_experimental_flags & USE_ALTERNATE_WAVETABLE_C) {
+        if (ui8_aca_experimental_flags_high & USE_ALTERNATE_WAVETABLE_C) {
 		    table_val = pure_sine_gen[translated_table_pos]; // in case of PMSM
         } else {
     		table_val = six_step[translated_table_pos];
         }
 	} else {
-        switch (ui16_aca_experimental_flags & (USE_ALTERNATE_WAVETABLE | USE_ALTERNATE_WAVETABLE_B)) {
+        switch (ui8_aca_experimental_flags_high & (USE_ALTERNATE_WAVETABLE | USE_ALTERNATE_WAVETABLE_B)) {
             case USE_ALTERNATE_WAVETABLE:
                 table_val = pure_sine_gen[translated_table_pos];
                 break;

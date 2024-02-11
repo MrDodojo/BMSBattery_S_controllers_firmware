@@ -30,18 +30,18 @@ void uart_put_buffered(uint8_t c) {
     }
 }
 
-uint8_t uart_get_packet_start_pos(void) {
+inline uint8_t uart_get_packet_start_pos(void) {
     return ui8_rx_packet_start_pos;
 }
 
-uint8_t byte_avail_at_position(void) {
+inline uint8_t byte_avail_at_position(void) {
     if (ui8_rx_fillpointer != ui8_rx_digestpointer) {
         return ui8_rx_digestpointer;
     }
     return UART_EMPTY_INDICATOR;
 }
 
-uint8_t uart_get_buffered(void) {
+inline uint8_t uart_get_buffered(void) {
     uint8_t c = ui8_uarx_buffer[ui8_rx_digestpointer++];
     if (ui8_rx_digestpointer >= UART_RINGBUFFER_SIZE) {
         ui8_rx_digestpointer = 0;
@@ -97,14 +97,16 @@ void uart_send_if_avail(void) {
 void uart_fill_rx_packet_buffer(uint8_t *buffer, uint8_t bufferSize, uint8_t *bufferPos) {
     while (byte_avail_at_position() != UART_EMPTY_INDICATOR) {
 
-        uint8_t uart_packet_start_pos = uart_get_packet_start_pos();
-        uint8_t byte_avail_at_pos = byte_avail_at_position();
+        volatile uint8_t uart_packet_start_pos = uart_get_packet_start_pos();
+        volatile uint8_t byte_avail_at_pos = byte_avail_at_position();
 
         if ((*bufferPos == 0) && (uart_packet_start_pos != byte_avail_at_pos)) {
             uart_get_buffered(); //discard incomplete chunks
         } else if (*bufferPos < bufferSize) {
             *(buffer + (*bufferPos)) = uart_get_buffered();
             (*bufferPos)++;
+        } else if (bufferSize == *bufferPos) {
+            break;
         }
     }
 }

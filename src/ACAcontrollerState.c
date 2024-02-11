@@ -69,7 +69,7 @@ uint8_t PAS_act = 3; //recent PAS direction reading
 uint8_t PAS_is_active = 0;
 uint16_t ui16_sum_torque = 0;
 uint16_t ui16_sum_throttle = 0;
-uint16_t ui16_momentary_throttle = 0;
+uint16_t ui8_momentary_throttle = 0;
 uint8_t ui8_offroad_state = 0; //state of offroad switching procedure
 uint32_t uint32_current_target = 0; //target for PI-Control
 uint16_t ui16_setpoint = 0;
@@ -123,11 +123,14 @@ uint16_t ui16_no_pass_counter = 3000;
 uint16_t ui16_passcode = 0;
 uint8_t ui8_lockstatus = 255;
 
-uint16_t ui16_aca_flags = 0;
-uint16_t ui16_aca_experimental_flags = 0;
+uint8_t ui8_aca_flags_high = 0;
+uint8_t ui8_aca_flags_low = 0;
+uint8_t ui8_aca_experimental_flags_low = 0;
+uint8_t ui8_aca_experimental_flags_high = 0;
 
 uint16_t ui16_torque[NUMBER_OF_PAS_MAGS]; //array for torque values of one crank revolution
 uint8_t ui8_torque_index = 0; //counter for torque array
+uint32_t uint32_torquesensorCalibration = TQS_CALIB;
 
 uint16_t ui16_time_ticks_between_pas_interrupt_smoothed = 0;
 uint16_t ui16_time_ticks_for_pas_calculation = 0; //time tics for cadence measurement
@@ -158,9 +161,10 @@ void controllerstate_init(void) {
 	ui8_a_s_assistlevels[3] =LEVEL_3;
 	ui8_a_s_assistlevels[4] =LEVEL_4;
 	ui8_a_s_assistlevels[5] =LEVEL_5;
-	ui16_aca_flags = ACA;
-	ui16_aca_experimental_flags = ACA_EXPERIMENTAL;
-	ui16_aca_experimental_flags |= 32; //sine wave table used (useful when not able to select in app)
+	ui8_aca_flags_low = ACA_LOW;
+	ui8_aca_flags_high = ACA_HIGH;
+	ui8_aca_experimental_flags_low = ACA_EXPERIMENTAL_LOW;
+	ui8_aca_experimental_flags_high = ACA_EXPERIMENTAL_HIGH;
 	ui8_s_battery_voltage_calibration = ADC_BATTERY_VOLTAGE_K;
 	ui8_s_battery_voltage_min = BATTERY_VOLTAGE_MIN_VALUE;
 	ui8_s_battery_voltage_max = BATTERY_VOLTAGE_MAX_VALUE;
@@ -200,12 +204,18 @@ void controllerstate_init(void) {
 	
 	eepromHighVal = eeprom_read(OFFSET_ACA_FLAGS_HIGH_BYTE);
 	eepromVal = eeprom_read(OFFSET_ACA_FLAGS);
-	if (eepromVal > 0 || eepromHighVal > 0) ui16_aca_flags = ((uint16_t) eepromHighVal << 8) + (uint16_t) eepromVal;
+	if (eepromVal > 0 || eepromHighVal > 0) {
+        ui8_aca_flags_high = eepromHighVal;
+        ui8_aca_flags_low = eepromVal;
+    }
 	eepromHighVal = eeprom_read(OFFSET_ACA_EXPERIMENTAL_FLAGS_HIGH_BYTE);
 	eepromVal = eeprom_read(OFFSET_ACA_EXPERIMENTAL_FLAGS);
-	if (eepromVal > 0 || eepromHighVal > 0) ui16_aca_experimental_flags = ((uint16_t) eepromHighVal << 8) + (uint16_t) eepromVal;
+	if (eepromVal > 0 || eepromHighVal > 0) {
+        ui8_aca_experimental_flags_high = eepromHighVal;
+        ui8_aca_experimental_flags_low = eepromVal;
+    }
 	
-	if ((ui16_aca_experimental_flags & HIGH_SPEED_MOTOR) == HIGH_SPEED_MOTOR) {
+	if ((ui8_aca_experimental_flags_high & HIGH_SPEED_MOTOR) == HIGH_SPEED_MOTOR) {
 		// pwm_init is run right after this functions call in main.c, so it's ok to change it here
 		// we do this only here at startup, so controller has to be restarted for motor speed changes to take effect
 		ui16_pwm_cycles_second = PWM_CPS_HIGH_SPEED;

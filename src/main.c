@@ -138,10 +138,11 @@ int main(void) {
 	for (a = 0; a < NUMBER_OF_PAS_MAGS; a++) {// array init
 		ui16_torque[a] = 0;
 	}
+    debug_pin_reset();
 
 #ifdef TT
-	ui16_aca_experimental_flags |= DC_STATIC_ZERO;// | PWM_AUTO_OFF;
-    ui16_aca_experimental_flags &= ~PWM_AUTO_OFF;
+	ui8_aca_experimental_flags_low |= DC_STATIC_ZERO;// | PWM_AUTO_OFF;
+    ui8_aca_experimental_flags_high &= ~PWM_AUTO_OFF;
 #endif
 
 #if defined DIAGNOSTICS
@@ -154,47 +155,62 @@ int main(void) {
 		uart_send_if_avail();
 
 		updateSpeeds();
-		updatePasStatus();
+		updatePasStatus(); // 5us if idle
 
 #if (defined (DISPLAY_TYPE) && defined (DISPLAY_TYPE_KINGMETER)) || defined DISPLAY_TYPE_KT_LCD3 || defined BLUOSEC || defined DISPLAY_TYPE_KT_LCD8
 
-		display_update();
+		display_update(); // 54us
 #endif
 
 		// scheduled update of setpoint and duty cycle (slow loop, 50 Hz)
 		if (ui8_slowloop_flag) {
-
+            
+        debug_pin_set();
+        debug_pin_reset();
+        debug_pin_set();
+        debug_pin_reset();
+        debug_pin_set();
+        debug_pin_reset();
+        debug_pin_set();
+        debug_pin_reset();
 			ui8_slowloop_flag = 0; //reset flag for slow loop
 			ui8_veryslowloop_counter++; // increase counter for very slow loop
-            motor_slow_update_pre();
-			checkPasInActivity();
-			updateRequestedTorque(); //now calculates tq for sensor as well
-			updateSlowLoopStates();
+            motor_slow_update_pre(); // 2us
+            debug_pin_reset();
+			checkPasInActivity(); // 300us
+            debug_pin_set();
+			updateRequestedTorque(); // 530us
+            debug_pin_reset();
+			updateSlowLoopStates(); // 50us
+            debug_pin_set();
 #ifndef X4_TEMPERATURE
 			updateX4();
 #endif
-			updateLight();
+			updateLight(); // 2us
+            debug_pin_reset();
 
-			ui16_setpoint = (uint16_t) aca_setpoint(ui16_time_ticks_between_pas_interrupt, ui16_setpoint); //update setpoint
+			ui16_setpoint = (uint16_t) aca_setpoint(ui16_time_ticks_between_pas_interrupt, ui16_setpoint); // 2500us
+            debug_pin_set();
 /* #if DO_CRUISE_CONTROL == 1 */
 /* 			ui16_setpoint = cruise_control(ui16_setpoint); */
 /* #endif */
 
-			pwm_set_duty_cycle((uint8_t) ui16_setpoint);
-            motor_slow_update_post();
-			
+			pwm_set_duty_cycle((uint8_t) ui16_setpoint); // 3us 
+            debug_pin_reset();
+            motor_slow_update_post(); // 4us
+            debug_pin_set();
 			/****************************************************************************/
 			//very slow loop for communication
-			if (ui8_veryslowloop_counter >= 5) {
+			if (ui8_veryslowloop_counter > 5) {
 
 				ui8_ultraslowloop_counter++;
 				ui8_veryslowloop_counter = 0;
 
-				if (ui8_ultraslowloop_counter >= 10) {
+				if (ui8_ultraslowloop_counter > 10) {
 					ui8_ultraslowloop_counter = 0;
 					ui8_uptime++;
 #ifdef X4_TEMPERATURE
-			        updateX4();
+			        updateX4();// update+ntc onv takes 61us
                     i8_motor_temperature = x4_ntc_value(); // low side ntc, use iff you have a 100k pullup and 100k ntc
 					//i8_motor_temperature = (ui16_x4_value - 105) >> 1;
 					//i8_motor_temperature += (int8_t)(ui16_BatteryCurrent - ui16_current_cal_b - 2) / 9; //if temperature sensor is not in the exact same common ground point you can add some compensation according to battery current
@@ -203,7 +219,7 @@ int main(void) {
 				}
 
 #ifdef DIAGNOSTICS
-				//printf("%u,%u, %u, %u, %u, %u\r\n", ui16_control_state, ui16_setpoint, ui16_motor_speed_erps, ui16_BatteryCurrent, ui16_sum_torque, ui16_momentary_throttle);
+				//printf("%u,%u, %u, %u, %u, %u\r\n", ui16_control_state, ui16_setpoint, ui16_motor_speed_erps, ui16_BatteryCurrent, ui16_sum_torque, ui8_momentary_throttle);
 
 				//printf("erps %d, motorstate %d, cyclecountertotal %d\r\n", ui16_motor_speed_erps, ui8_possible_motor_state|ui8_dynamic_motor_state, ui16_PWM_cycles_counter_total);
 
@@ -224,6 +240,7 @@ int main(void) {
 				printf("correction angle %d, Current %d, Voltage %d, sumtorque %d, setpoint %d, km/h %lu\n",ui8_position_correction_value, i16_deziAmps, ui8_BatteryVoltage, ui16_sum_throttle, ui16_setpoint, ui32_speed_sensor_rpks);
 #endif
 			}//end of very slow loop
+            debug_pin_reset();
 
 
 		}// end of slow loop
