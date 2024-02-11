@@ -84,7 +84,8 @@ HEADERS = \
 RELS = $(EXTRASRCS:.c=.rel)
 
 INCLUDES = -I$(IDIR) -I$(INC) 
-CFLAGS   = -m$(PLATFORM) --std-c99 --nolospre 
+CFLAGS   = -m$(PLATFORM) --std-c99 
+#--nolospre 
 #ELF_FLAGS = --out-fmt-elf --debug
 #ELF_FLAGS = --out-fmt-elf
 ELF_FLAGS = --out-fmt-ihx

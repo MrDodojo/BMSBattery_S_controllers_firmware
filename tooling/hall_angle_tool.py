@@ -13,11 +13,11 @@ counter = 0
 first = True
 def signal_handler(sig, frame):
     a = ((median(ctr[4])) * (255.0/360.0))
-    b = ((median(ctr[6])) * (255.0/360.0)) + a
-    c = ((median(ctr[2])) * (255.0/360.0)) + b
-    d = ((median(ctr[3])) * (255.0/360.0)) + c
-    e = ((median(ctr[1])) * (255.0/360.0)) + d
-    f = ((median(ctr[5])) * (255.0/360.0)) + e
+    b = ((median(ctr[6])) * (255.0/360.0))
+    c = ((median(ctr[2])) * (255.0/360.0))
+    d = ((median(ctr[3])) * (255.0/360.0))
+    e = ((median(ctr[1])) * (255.0/360.0))
+    f = ((median(ctr[5])) * (255.0/360.0))
     co = ((median(crossover_result) - 180) * (255.0/360.0) % 256)
 
     print("#define ANGLE_4_0 1")
@@ -32,7 +32,7 @@ def signal_handler(sig, frame):
 current_offset = 512
 signal.signal(signal.SIGINT, signal_handler)
 ob = None
-ser = serial.Serial("/dev/ttyUSB0", 115200, timeout=0)
+ser = serial.Serial("/dev/ttyUSB0", 230400, timeout=0)
 buffer = b""
 update = False
 SIZE = 1 + 2 + 1 + 1
@@ -119,11 +119,11 @@ while True:
 
                 angle = [0, 0, 0, 0, 0, 0, 0]
                 angle[4] = 0 # by definition
-                angle[6] = (row[6] - row[0]) * (360.0/dur)
-                angle[2] = (row[2] - row[6]) * (360.0/dur)
-                angle[3] = (row[3] - row[2]) * (360.0/dur)
-                angle[1] = (row[1] - row[3]) * (360.0/dur)
-                angle[5] = (row[5] - row[1]) * (360.0/dur)
+                angle[6] = (row[6] - row[0]) * (360.0/dur) + angle[4]
+                angle[2] = (row[2] - row[6]) * (360.0/dur) + angle[6]
+                angle[3] = (row[3] - row[2]) * (360.0/dur) + angle[2]
+                angle[1] = (row[1] - row[3]) * (360.0/dur) + angle[3]
+                angle[5] = (row[5] - row[1]) * (360.0/dur) + angle[1]
 
                 for i in range(1, len(current)-1): #[1:]:
                     cp = current[i-1][1]

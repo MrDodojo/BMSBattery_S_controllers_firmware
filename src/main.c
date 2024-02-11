@@ -153,7 +153,6 @@ int main(void) {
     uint8_t pts = 0;
 	while (1) {
 		uart_send_if_avail();
-
 		updateSpeeds();
 		updatePasStatus(); // 5us if idle
 
@@ -165,40 +164,25 @@ int main(void) {
 		// scheduled update of setpoint and duty cycle (slow loop, 50 Hz)
 		if (ui8_slowloop_flag) {
             
-        debug_pin_set();
-        debug_pin_reset();
-        debug_pin_set();
-        debug_pin_reset();
-        debug_pin_set();
-        debug_pin_reset();
-        debug_pin_set();
-        debug_pin_reset();
+		    debug_pin_set();
 			ui8_slowloop_flag = 0; //reset flag for slow loop
 			ui8_veryslowloop_counter++; // increase counter for very slow loop
             motor_slow_update_pre(); // 2us
-            debug_pin_reset();
-			checkPasInActivity(); // 300us
-            debug_pin_set();
-			updateRequestedTorque(); // 530us
-            debug_pin_reset();
-			updateSlowLoopStates(); // 50us
-            debug_pin_set();
+			checkPasInActivity(); // 12us
+			updateRequestedTorque(); // 75us
+			updateSlowLoopStates(); // 8us
 #ifndef X4_TEMPERATURE
 			updateX4();
 #endif
 			updateLight(); // 2us
-            debug_pin_reset();
 
-			ui16_setpoint = (uint16_t) aca_setpoint(ui16_time_ticks_between_pas_interrupt, ui16_setpoint); // 2500us
-            debug_pin_set();
+			ui16_setpoint = (uint16_t) aca_setpoint(ui16_time_ticks_between_pas_interrupt, ui16_setpoint); // 1250us
 /* #if DO_CRUISE_CONTROL == 1 */
 /* 			ui16_setpoint = cruise_control(ui16_setpoint); */
 /* #endif */
 
 			pwm_set_duty_cycle((uint8_t) ui16_setpoint); // 3us 
-            debug_pin_reset();
             motor_slow_update_post(); // 4us
-            debug_pin_set();
 			/****************************************************************************/
 			//very slow loop for communication
 			if (ui8_veryslowloop_counter > 5) {
@@ -240,9 +224,9 @@ int main(void) {
 				printf("correction angle %d, Current %d, Voltage %d, sumtorque %d, setpoint %d, km/h %lu\n",ui8_position_correction_value, i16_deziAmps, ui8_BatteryVoltage, ui16_sum_throttle, ui16_setpoint, ui32_speed_sensor_rpks);
 #endif
 			}//end of very slow loop
-            debug_pin_reset();
 
 
+        debug_pin_reset();
 		}// end of slow loop
 		 //
 #ifndef TT

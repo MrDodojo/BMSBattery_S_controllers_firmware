@@ -147,7 +147,7 @@ extern uint8_t ui8_moving_indication;
 extern uint8_t ui8_cruiseThrottleSetting;
 extern uint8_t ui8_cruiseMinThrottle;
 
-extern uint8_t pwm_swap_phases;
+extern volatile uint8_t pwm_swap_phases;
 
 void controllerstate_init(void);
 
@@ -206,6 +206,6 @@ typedef enum {
 #define ACA_LOW  (BRAKE_DISABLES_OFFROAD | DIGITAL_REGEN | SPEED_INFLUENCES_REGEN)
 #define ACA_HIGH (DYNAMIC_ASSIST_LEVEL | ANGLE_CORRECTION_ENABLED)
 #define ACA_EXPERIMENTAL_LOW (USE_ALTERNATE_WAVETABLE_C | USE_ALTERNATE_WAVETABLE)
-#define ACA_EXPERIMENTAL_HIGH (PWM_AUTO_OFF)
+#define ACA_EXPERIMENTAL_HIGH (THROTTLE_UNRESTRICTED | THROTTLE_REGEN | PWM_AUTO_OFF) 
 #endif /* BOCONTROLLERSTATE_H */
 

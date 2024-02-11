@@ -114,7 +114,7 @@ void uart_fill_rx_packet_buffer(uint8_t *buffer, uint8_t bufferSize, uint8_t *bu
 void uart_init(void) {
     UART2_DeInit();
 #if defined TT
-    UART2_Init((uint32_t) 115200,
+    UART2_Init((uint32_t) 230400,
 #else
     UART2_Init((uint32_t) 9600,
 #endif

@@ -36,7 +36,6 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301  USA
 
 //#define DEBUG
 
-extern uint8_t pwm_swap_phases;
 #ifdef DISPLAY_TYPE_KT_LCD8
 display_view_type display_view;
 display_mode_type display_mode; //currently display mode
@@ -98,9 +97,7 @@ void send_message(void) {
         ui16_battery_bars_calc<<=8;
         ui16_battery_bars_calc /=(BATTERY_VOLTAGE_MAX_VALUE - BATTERY_VOLTAGE_MIN_VALUE);
     }
-#ifdef DEBUG
-    memset(&controller_data, 0x00, sizeof(controller_data));
-#endif
+
     if (ui16_battery_bars_calc == 1024) {
         controller_data.charging_status = 2;
 		controller_data.bars = 0;
@@ -219,11 +216,9 @@ void digestLcdValues(void) {
 	
     if (pwm_swap_phases != lcd_data.p2) {
         pwm_swap_phases = lcd_data.p2; // alows live swapping of 
-                                       // phases to test motors
-        pwm_duty_cycle_controller();
     }
 
-	if (lcd_data.p3 != (ui8_aca_experimental_flags_high >> 1) & 0x01) {
+	if (lcd_data.p3 != ((ui8_aca_experimental_flags_high >> 1) & 0x01)) {
 		ui8_aca_experimental_flags_high &= ~PWM_AUTO_OFF;
 		ui8_aca_experimental_flags_high |= lcd_data.p3 << 1;
         update_exp = 1;
@@ -250,35 +245,49 @@ void digestLcdValues(void) {
     
     if (lcd_data.c5 != ((ui8_aca_experimental_flags_low >> 5) & 0x07)) {
 		ui8_aca_experimental_flags_low &= ~(USE_ALTERNATE_WAVETABLE | USE_ALTERNATE_WAVETABLE_B | USE_ALTERNATE_WAVETABLE_C);
-        ui8_aca_experimental_flags_low |= (lcd_data.c5 & 0x07) << 5;
+        ui8_aca_experimental_flags_low |= ((lcd_data.c5 & 0x07) << 5);
         update_exp = 1;
     }
+
 
     if (lcd_data.c12 != ((ui8_aca_flags_low >> 4) & 0x07)) {
 		ui8_aca_flags_low &= ~(DIGITAL_REGEN | SPEED_INFLUENCES_REGEN | SPEED_INFLUENCES_TORQUESENSOR);
         ui8_aca_flags_low |= lcd_data.c12 << 4;
         update_aca = 1;
     }
+    
 
-    if (lcd_data.l1 != ((ui8_aca_experimental_flags_high >> 3) & 0x03)) {
-        ui8_aca_experimental_flags_high &= ~(THROTTLE_ALLOWED_FOR_WALK |  THROTTLE_REGEN | THROTTLE_UNRESTRICTED);
-        switch (lcd_data.l1) {
-            case 0:
-            default:
+    switch (lcd_data.l1) {
+        case 0:
+        default:
+            if ((ui8_aca_experimental_flags_high & 0x38) != THROTTLE_ALLOWED_FOR_WALK) {
+                ui8_aca_experimental_flags_high &= ~(THROTTLE_ALLOWED_FOR_WALK |  THROTTLE_REGEN | THROTTLE_UNRESTRICTED);
                 ui8_aca_experimental_flags_high |= THROTTLE_ALLOWED_FOR_WALK;
-                break;
-            case 1:
+                update_exp = 1;
+            }
+            break;
+        case 1:
+            if ((ui8_aca_experimental_flags_high & 0x38) != THROTTLE_REGEN) {
+                ui8_aca_experimental_flags_high &= ~(THROTTLE_ALLOWED_FOR_WALK |  THROTTLE_REGEN | THROTTLE_UNRESTRICTED);
                 ui8_aca_experimental_flags_high |= THROTTLE_REGEN;
-                break;
+                update_exp = 1;
+            }
+            break;
 
-            case 2:
+        case 2:
+            if ((ui8_aca_experimental_flags_high & 0x38) != THROTTLE_UNRESTRICTED) {
+                ui8_aca_experimental_flags_high &= ~(THROTTLE_ALLOWED_FOR_WALK |  THROTTLE_REGEN | THROTTLE_UNRESTRICTED);
                 ui8_aca_experimental_flags_high |= THROTTLE_UNRESTRICTED;
-                break;
-            case 3:
+                update_exp = 1;
+            }
+            break;
+        case 3:
+            if ((ui8_aca_experimental_flags_high & 0x38) != (THROTTLE_UNRESTRICTED | THROTTLE_REGEN)) {
+                ui8_aca_experimental_flags_high &= ~(THROTTLE_ALLOWED_FOR_WALK |  THROTTLE_REGEN | THROTTLE_UNRESTRICTED);
                 ui8_aca_experimental_flags_high |= THROTTLE_UNRESTRICTED | THROTTLE_REGEN;
-                break;
-        }
-        update_exp = 1;
+                update_exp = 1;
+            }
+            break;
     }
 
 	if (lcd_data.l2 != ((ui8_aca_experimental_flags_low >> 1) & 0x01)) {
@@ -294,17 +303,13 @@ void digestLcdValues(void) {
 	}
 
     if (update_aca) {
-        debug_pin_set();
 		eeprom_write(OFFSET_ACA_FLAGS_HIGH_BYTE, ui8_aca_flags_high);
 		eeprom_write(OFFSET_ACA_FLAGS, ui8_aca_flags_low);
-        debug_pin_reset();
     }
 
     if (update_exp) {
-        debug_pin_set();
 		eeprom_write(OFFSET_ACA_EXPERIMENTAL_FLAGS_HIGH_BYTE, ui8_aca_experimental_flags_high);
 		eeprom_write(OFFSET_ACA_EXPERIMENTAL_FLAGS, ui8_aca_experimental_flags_low);
-        debug_pin_reset();
     }
 }
 

@@ -59,7 +59,6 @@ volatile uint8_t motor_direction_reverse;
 #define HALL_REMAP(x) ((x&1) | ((x&2)<<1) | ((x&4) >> 1))
 
 void TIM1_UPD_OVF_TRG_BRK_IRQHandler(void) __interrupt(TIM1_UPD_OVF_TRG_BRK_IRQHANDLER) {
-//    disableInterrupts();
 	adc_trigger();
 	hall_sensors_read_and_action();
 
@@ -67,7 +66,6 @@ void TIM1_UPD_OVF_TRG_BRK_IRQHandler(void) __interrupt(TIM1_UPD_OVF_TRG_BRK_IRQH
 
 	// clear the interrupt pending bit for TIM1
 	TIM1_ClearITPendingBit(TIM1_IT_UPDATE);
-//    enableInterrupts();
 }
 
 void hall_sensor_init(void) {
@@ -370,7 +368,7 @@ void watchdog_init(void) {
 	//  0.0001 = 2 * (1 / 128000) * 4 * R
 	//  R = 1.6 ; rounding to R = 2
 	//  R = 2 means a value of reload register = 1
-	IWDG_SetReload(2); // 187.5us; for some reason, a value of 1 don't work, only 2
+	IWDG_SetReload(4); // 187.5us; for some reason, a value of 1 don't work, only 2
 	IWDG_ReloadCounter();
 }
 

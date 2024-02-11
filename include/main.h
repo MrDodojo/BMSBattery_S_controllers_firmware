@@ -33,12 +33,6 @@
 #define PWM_VALUE_DUTY_CYCLE_MAX (256 - 1)
 #define MIDDLE_PWM_VALUE_DUTY_CYCLE_MAX (PWM_VALUE_DUTY_CYCLE_MAX/2)
 
-#ifndef SWAP_PHASES
-#define SWAP_PHASES_DEFAULT 0
-#else
-#define SWAP_PHASES_DEFAULT SWAP_PHASES
-#endif
-
 extern uint16_t ui16_log1;
 extern uint16_t ui16_log2;
 extern uint8_t ui8_log;

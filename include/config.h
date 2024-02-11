@@ -8,6 +8,7 @@
 #ifndef CONFIG_H_
 #define CONFIG_H_
 
+#define DEBUG
 
 #define NUMBER_OF_PAS_MAGS 10
 #define limit 28
@@ -47,19 +48,26 @@
 #define WALK_ASSIST_SPEED_LIMIT 6
 #define WALK_ASSIST_CURRENT_TARGET 5
 
+// #define ANGLE_4_0 1
+// #define ANGLE_6_60 32
+// #define ANGLE_2_120 84
+// #define ANGLE_3_180 126
+// #define ANGLE_1_240 172
+// #define ANGLE_5_300 240
+
 #define ANGLE_4_0 1
-#define ANGLE_6_60 35
-#define ANGLE_2_120 84
-#define ANGLE_3_180 133
-#define ANGLE_1_240 166
-#define ANGLE_5_300 211
-#define MOTOR_ROTOR_DELTA_PHASE_ANGLE_RIGHT 112
+#define ANGLE_6_60 43
+#define ANGLE_2_120 86
+#define ANGLE_3_180 128
+#define ANGLE_1_240 171
+#define ANGLE_5_300 213
+#define MOTOR_ROTOR_DELTA_PHASE_ANGLE_RIGHT 236
 
 #define X4_TEMPERATURE
 #define X4_TEMP_CAL_OFFSET 5
 
 #define USE_FIELD_WEAKENING
-#define SWAP_PHASES 6
+#define SWAP_PHASES 2
 
 #define HALL_SENSOR_MODE_REVERSED
 /*

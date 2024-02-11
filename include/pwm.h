@@ -11,12 +11,19 @@
 
 #include "main.h"
 #include "interrupts.h"
+#include "config.h"
 
 #define SVM 1
 #define SINE_SVM_ORIGINAL 2
 #define SINE 3
 
 #define SVM_TABLE SVM
+
+#ifndef SWAP_PHASES
+#define SWAP_PHASES_DEFAULT 2
+#else
+#define SWAP_PHASES_DEFAULT SWAP_PHASES
+#endif
 
 
 extern uint8_t ui8_duty_cycle_target;

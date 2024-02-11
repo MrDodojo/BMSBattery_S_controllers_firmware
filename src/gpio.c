@@ -6,6 +6,7 @@
  * Released under the GPL License, Version 3
  */
 
+#include "config.h"
 #include "stm8s.h"
 #include "stm8s_gpio.h"
 #include "gpio.h"
@@ -48,12 +49,16 @@ void debug_pin_init (void)
 
 void debug_pin_set (void)
 {
+#ifdef DEBUG
   GPIO_WriteHigh(DEBUG__PORT, DEBUG__PIN);
+#endif
 }
 
 void debug_pin_reset (void)
 {
+#ifdef DEBUG
   GPIO_WriteLow(DEBUG__PORT, DEBUG__PIN);
+#endif
 }
 
 // added by DerBastler - Light
