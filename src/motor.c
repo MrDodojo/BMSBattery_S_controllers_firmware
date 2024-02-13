@@ -60,7 +60,9 @@ volatile uint8_t motor_direction_reverse;
 
 void TIM1_UPD_OVF_TRG_BRK_IRQHandler(void) __interrupt(TIM1_UPD_OVF_TRG_BRK_IRQHANDLER) {
 	adc_trigger();
-	hall_sensors_read_and_action();
+#ifndef OPEN_LOOP
+    hall_sensors_read_and_action();
+#endif
 
 	motor_fast_loop();
 
@@ -191,15 +193,15 @@ static volatile uint8_t curr_target_ctrl = 126;
 static volatile uint8_t max_angle_ctrl = 143;
 #endif
 
-static void updateCorrection(uint8_t reverse) {
+static void updateCorrection() {
 
-	if (ui8_duty_cycle_target > 5) {
+	if (ui8_duty_cycle_target > 0) {
 		ui16_ADC_iq_current_accumulated -= ui16_ADC_iq_current_accumulated >> 3;
 		ui16_ADC_iq_current_accumulated += ui16_adc_read_phase_B_current();
 		ui16_ADC_iq_current = ui16_ADC_iq_current_accumulated >> 3; // this value is regualted to be zero by FOC
 	}
 
-	if ((ui8_aca_flags_high & ANGLE_CORRECTION_ENABLED) != ANGLE_CORRECTION_ENABLED) {
+	if (!(ui8_aca_flags_high & ANGLE_CORRECTION_ENABLED)) {
 		ui8_position_correction_value = 127; //set advance angle to neutral value
 		return;
 	}
@@ -221,7 +223,12 @@ static void updateCorrection(uint8_t reverse) {
 	if (ui16_motor_speed_erps > 3 && BatteryCurrent > ui16_current_cal_b + 3) { //normal riding,
 		if (ui16_ADC_iq_current >> 2 > (curr_target+2) && ui8_position_correction_value < max_angle) {
 			ui8_position_correction_value++;
+#ifdef PMSM 
+    // My PMSM needs to be lagging at startup and otherwise it would go negative 
+		} else if (ui16_ADC_iq_current >> 2 < (curr_target) && ui8_position_correction_value > 127) {
+#else
 		} else if (ui16_ADC_iq_current >> 2 < (curr_target) && ui8_position_correction_value > 111) {
+#endif
 			ui8_position_correction_value--;
 		}
 	} else if (ui16_motor_speed_erps > 3 && BatteryCurrent < ui16_current_cal_b - 3) {//regen
@@ -229,6 +236,7 @@ static void updateCorrection(uint8_t reverse) {
 	} else if (ui16_motor_speed_erps < 3) {
 		ui8_position_correction_value = 127; //reset advance angle at very low speed)
 	}
+
 
 }
 
@@ -250,8 +258,6 @@ void motor_fast_loop(void) {
 	if (GPIO_ReadInputPin(PAS__PORT, PAS__PIN) && ui16_PAS_High_Counter < 65530) {
 		ui16_PAS_High_Counter++;
 	}
-	uint8_t reverse = motor_direction_reverse;
-
 	// count number of fast loops / PWM cycles
 	if (ui16_PWM_cycles_counter >= PWM_CYCLES_COUNTER_MAX) {
 		//ui16_PWM_cycles_counter = 0;
@@ -305,11 +311,7 @@ void motor_fast_loop(void) {
 
 	}
 	ui16_PWM_cycles_counter++;
-	if (reverse) {
-		ui8_sinetable_precalc = ui8_interpolation_start_position + ui8_s_motor_angle + ui8_position_correction_value -127 - ui8_interpolation_angle;
-	} else {
-		ui8_sinetable_precalc = ui8_interpolation_start_position + ui8_s_motor_angle + ui8_position_correction_value -127 + ui8_interpolation_angle;
-	}
+	ui8_sinetable_precalc = ui8_interpolation_start_position + ui8_s_motor_angle + ui8_position_correction_value -127 + ui8_interpolation_angle;
 
 	if ((ui8_aca_experimental_flags_low & AVOID_MOTOR_CYCLES_JITTER) != AVOID_MOTOR_CYCLES_JITTER){
 		ui8_sinetable_position = ui8_sinetable_precalc;
@@ -326,22 +328,18 @@ void motor_fast_loop(void) {
 		}
 	}
 
-	//ui8_assumed_motor_position = ui8_interpolation_start_position + ui8_interpolation_angle + ui8_s_motor_angle + ui8_position_correction_value - 127;
-	if (reverse) {
-		ui8_assumed_motor_position = ui8_interpolation_start_position + ui8_s_motor_angle - ui8_interpolation_angle;
-	} else {
-		ui8_assumed_motor_position = ui8_interpolation_start_position + ui8_interpolation_angle + ui8_s_motor_angle;
-	}
+	ui8_assumed_motor_position = ui8_interpolation_start_position + ui8_interpolation_angle + ui8_s_motor_angle;
 
 	// check if FOC control is needed
-	if ((ui8_foc_enable_flag) && ((ui8_assumed_motor_position) >= (ui8_correction_at_angle)) && ((ui8_assumed_motor_position) < (ui8_correction_at_angle + 4))) {
+	//if ((ui8_foc_enable_flag) && 
+    if (((ui8_assumed_motor_position) >= (ui8_correction_at_angle)) && ((ui8_assumed_motor_position) < (ui8_correction_at_angle + 4))) {
 		// make sure we just execute one time per ERPS, so reset the flag
 		ui8_foc_enable_flag = 0;
 
 		//ui8_variableDebugA = ui8_assumed_motor_position;
 		//ui8_variableDebugB = ui8_assumed_motor_position + ui8_position_correction_value - 127;
 
-        updateCorrection(reverse);
+        updateCorrection();
 	}
 
 

@@ -78,6 +78,7 @@ typedef enum {
 	OFFSET_PASSCODE = ((uint8_t) 0x28),
 	OFFSET_GEAR_RATIO = ((uint8_t) 0x29)
 
+
 } BO_EEPROM_OFFSETS;
 
 void eeprom_init(void);

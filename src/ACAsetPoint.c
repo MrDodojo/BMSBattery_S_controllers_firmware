@@ -30,14 +30,14 @@
 #include "brake.h"
 #include "adc.h" // FIXME ugly cross reference
 
-static uint32_t ui32_dutycycle; // local version of setpoint
+uint32_t ui32_dutycycle; // local version of setpoint
 
 static int8_t uint_PWM_Enable = 0; //flag for PWM state
-static uint16_t ui16_BatteryCurrent_accumulated = 2496L; //8x current offset, for filtering or Battery Current
-static uint16_t ui16_BatteryVoltage_accumulated;
+uint16_t ui16_BatteryCurrent_accumulated = 2496L; //8x current offset, for filtering or Battery Current
+uint16_t ui16_BatteryVoltage_accumulated;
 static uint16_t ui16_assist_percent_smoothed;
 static uint32_t ui32_time_ticks_between_pas_interrupt_accumulated = 0; // for filtering of PAS value 
-static uint32_t ui32_erps_accumulated; //for filtering of erps
+uint32_t ui32_erps_accumulated; //for filtering of erps
 //static uint32_t ui32_speedlimit_actual_accumulated;
 static uint32_t ui32_sumthrottle_accumulated; //it is already smoothed b4 we get it, we want to smooth it even more though for dynamic assist levels
 
@@ -60,20 +60,22 @@ uint16_t cutoffSetpoint(uint32_t ui32_dutycycle) {
 
 BitStatus checkMaxErpsOverride(){
 	if (ui32_erps_filtered > ui16_erps_max) {
-		ui32_dutycycle = PI_control(ui32_erps_filtered, ui16_erps_max,uint_PWM_Enable); //limit the erps to maximum value to have minimum 30 points of sine table for proper commutation
+		/* ui32_dutycycle = PI_control(ui32_erps_filtered, ui16_erps_max,uint_PWM_Enable); //limit the erps to maximum value to have minimum 30 points of sine table for proper commutation */
+		ui32_dutycycle = PI_control_fixed(ui32_erps_filtered, ui16_erps_max,uint_PWM_Enable); //limit the erps to maximum value to have minimum 30 points of sine table for proper commutation
 		controll_state_temp +=1024;
 		return 1;
 	}
 	return 0;
 }
-
+int test = 1;
 BitStatus checkUnderVoltageOverride(){
 	//check for undervoltage --> ramp down power starting 6.25% above min
 	ui8_temp = ui8_s_battery_voltage_min + (ui8_s_battery_voltage_min>>4);
 	if (ui8_BatteryVoltage < ui8_temp) {
-
-		uint32_current_target = map32(ui8_BatteryVoltage, ui8_s_battery_voltage_min, ui8_temp, ui16_current_cal_b, uint32_current_target );
-		ui32_dutycycle = PI_control(ui16_BatteryCurrent, uint32_current_target,uint_PWM_Enable);
+		uint32_current_target = (uint32_t) map16o8i(ui8_BatteryVoltage, ui8_s_battery_voltage_min, ui8_temp, ui16_current_cal_b, (uint16_t) uint32_current_target ); // has to be < 1024 since that's the ADC max
+		/* uint32_current_target = (uint32_t) map32(ui8_BatteryVoltage, ui8_s_battery_voltage_min, ui8_temp, ui16_current_cal_b, (uint16_t) uint32_current_target ); // has to be < 1024 since that's the ADC max */
+        /* ui32_dutycycle = PI_control(ui16_BatteryCurrent, uint32_current_target,uint_PWM_Enable); */
+        ui32_dutycycle = PI_control_fixed(ui16_BatteryCurrent, uint32_current_target,uint_PWM_Enable);
 		controll_state_temp +=2048;
 		return 1;
     }
@@ -84,9 +86,10 @@ BitStatus checkOverVoltageOverride(){
 	//check for overvoltage --> ramp down regen starting 3.125% below max
 	ui8_temp = ui8_s_battery_voltage_max - (ui8_s_battery_voltage_max>>5);
 	if (ui8_BatteryVoltage > ui8_temp) {
-
-		uint32_current_target = map32(ui8_BatteryVoltage, ui8_temp, ui8_s_battery_voltage_max, uint32_current_target, ui16_current_cal_b );
-		ui32_dutycycle = PI_control(ui16_BatteryCurrent, uint32_current_target,uint_PWM_Enable);
+		/* uint32_current_target = (uint32_t) map32(ui8_BatteryVoltage, ui8_temp, ui8_s_battery_voltage_max, (uint16_t) uint32_current_target, ui16_current_cal_b ); */
+		uint32_current_target = (uint32_t) map16o8i(ui8_BatteryVoltage, ui8_temp, ui8_s_battery_voltage_max, (uint16_t) uint32_current_target, ui16_current_cal_b );
+		/* ui32_dutycycle = PI_control(ui16_BatteryCurrent, uint32_current_target,uint_PWM_Enable); */
+		ui32_dutycycle = PI_control_fixed(ui16_BatteryCurrent, uint32_current_target,uint_PWM_Enable);
 		controll_state_temp +=4096;
 		return 1;
     }
@@ -99,6 +102,8 @@ void aca_setpoint_init(void) {
 
 uint16_t aca_setpoint(uint16_t ui16_time_ticks_between_pas_interrupt, uint16_t setpoint_old) {
 	// select virtual erps speed based on speedsensor type
+    //
+
 	if (((ui8_aca_flags_high & EXTERNAL_SPEED_SENSOR) == EXTERNAL_SPEED_SENSOR)) {
 		ui16_virtual_erps_speed = (uint16_t) ((((uint32_t)ui8_gear_ratio) * ui32_speed_sensor_rpks) /1000); 
 	}else{
@@ -108,13 +113,14 @@ uint16_t aca_setpoint(uint16_t ui16_time_ticks_between_pas_interrupt, uint16_t s
 	// first select current speed limit
 	if (ui8_offroad_state == 255) {
 		ui8_speedlimit_actual_kph = 80;
-	} else if (ui8_walk_assist || (ui8_aca_experimental_flags_high & THROTTLE_ALLOWED_FOR_WALK && ui16_sum_throttle > 2)) {
+	} else if (ui8_walk_assist || ((ui8_aca_experimental_flags_high & THROTTLE_ALLOWED_FOR_WALK) && ui16_sum_throttle > 2)) {
 		ui8_speedlimit_actual_kph = WALK_ASSIST_SPEED_LIMIT;
+        ui8_walk_assist = 1;
 	} else if (ui8_offroad_state > 15 && ui16_sum_throttle <= 2) { // allow a slight increase based on ui8_offroad_state
 		ui8_speedlimit_actual_kph = ui8_speedlimit_kph + (ui8_offroad_state - 16);
 	} else if (ui8_offroad_state > 15 && ui16_sum_throttle > 2) {
 		ui8_speedlimit_actual_kph = ui8_speedlimit_with_throttle_override_kph + (ui8_offroad_state - 16);
-    } else if (ui8_aca_experimental_flags_high & THROTTLE_UNRESTRICTED && ui16_sum_throttle > 2) {
+    } else if ((ui8_aca_experimental_flags_high & THROTTLE_UNRESTRICTED) && ui16_sum_throttle > 2) {
         ui8_speedlimit_actual_kph = ui8_speedlimit_with_throttle_override_kph;
 	} else if (ui16_time_ticks_for_pas_calculation > timeout || !PAS_is_active) {
 		ui8_speedlimit_actual_kph = ui8_speedlimit_without_pas_kph;
@@ -129,7 +135,6 @@ uint16_t aca_setpoint(uint16_t ui16_time_ticks_between_pas_interrupt, uint16_t s
 		ui16_assist_percent_smoothed += ui8_assist_percent_wanted;
 	}
 	ui8_assist_percent_actual = ui16_assist_percent_smoothed >> 4;
-
 
 	// average throttle over a longer time period (for dynamic assist level) 
 	ui32_sumthrottle_accumulated -= ui32_sumthrottle_accumulated >> 10;
@@ -163,10 +168,11 @@ uint16_t aca_setpoint(uint16_t ui16_time_ticks_between_pas_interrupt, uint16_t s
 
 	ui8_moving_indication = 0;
 	// check for brake --> set regen current
-	if (brake_is_set()) {
+	if (brake_is_set()) { // float code takes at worst 3.12ms, uint32 code 660ms (both worst code paths)
 		ui8_cruiseThrottleSetting = 0;
 		ui8_moving_indication |= (32);
 		controll_state_temp = 255;
+        
 		//Current target based on regen assist level
 		if ((ui8_aca_flags_low & DIGITAL_REGEN) == DIGITAL_REGEN) {
 
@@ -186,26 +192,25 @@ uint16_t aca_setpoint(uint16_t ui16_time_ticks_between_pas_interrupt, uint16_t s
             }
 			controll_state_temp -= 2;
 		}
-		float_temp = (float) ((((uint32_t) ui8_temp) * ((uint32_t) ui16_regen_current_max_value)) >> 7);
+        uint32_t ui32_temp = ((uint32_t)ui8_temp * (uint32_t) ui16_regen_current_max_value);
+        ui32_temp >>= 7;
 
 		//Current target gets ramped down with speed
 		if (((ui8_aca_flags_low & SPEED_INFLUENCES_REGEN) == SPEED_INFLUENCES_REGEN) && (ui16_virtual_erps_speed < ((ui16_speed_kph_to_erps_ratio * ((uint16_t) ui8_speedlimit_kph)) / 100))) {
-
-			if (ui16_virtual_erps_speed < 15) {
-				// turn of regen at low speeds
-				// based on erps in order to avoid an additional calculation
-				float_temp = 0.0;
-			} else {
-
-				float_temp *= ((float) ui16_virtual_erps_speed / ((float) (ui16_speed_kph_to_erps_ratio * ((float) ui8_speedlimit_kph)) / 100.0)); // influence of current speed based on base speed limit
-				controll_state_temp -= 4;
-			}
+            ui32_temp *= ui16_virtual_erps_speed;
+            ui32_temp <<= 8; // 24.8
+            ui32_temp /= ((uint32_t) ui16_speed_kph_to_erps_ratio * (uint32_t) ui8_speedlimit_kph);
+            ui32_temp *= 100;
+            ui32_temp >>= 8; // rouding can offset by one but we ignore it 
+            controll_state_temp -= 4;
 		}
 
-		uint32_current_target = (uint32_t) ui16_current_cal_b - float_temp;
-		
+		uint32_current_target = ui16_current_cal_b - ui32_temp;
+
+
 		if (!checkOverVoltageOverride()){
-			ui32_dutycycle = PI_control(ui16_BatteryCurrent, uint32_current_target,uint_PWM_Enable);
+			/* ui32_dutycycle = PI_control(ui16_BatteryCurrent, uint32_current_target,uint_PWM_Enable); */
+			ui32_dutycycle = PI_control_fixed(ui16_BatteryCurrent, uint32_current_target,uint_PWM_Enable);
 		}
 		
 		if (((ui8_aca_flags_high & BYPASS_LOW_SPEED_REGEN_PI_CONTROL) == BYPASS_LOW_SPEED_REGEN_PI_CONTROL) && (ui32_dutycycle == 0)) {
@@ -213,7 +218,6 @@ uint16_t aca_setpoint(uint16_t ui16_time_ticks_between_pas_interrupt, uint16_t s
 			ui32_dutycycle = ui16_virtual_erps_speed * 2;
 			controll_state_temp -= 8;
 		}
-		
 	} else {
 		uint32_current_target = ui16_current_cal_b; // reset target to zero
 		controll_state_temp = 0;
@@ -278,24 +282,24 @@ uint16_t aca_setpoint(uint16_t ui16_time_ticks_between_pas_interrupt, uint16_t s
 
 		}
 
-
-		//float_temp = 0.0;
+        // float takes 1.42ms, uint16 takes 0.72ms. 
+        uint16_t ui16_temp = 0;
 		// throttle / torquesensor override following
 		if (((ui8_aca_flags_high & TQ_SENSOR_MODE) != TQ_SENSOR_MODE)) {
 			if (ui8_speedlimit_kph > 1) {
 				// do not apply throttle at very low speed limits (technical restriction, speelimit can and should never be lover than 1)
 				if (ui8_cruiseThrottleSetting >= 25) {
 					ui8_moving_indication |= (8);
-					float_temp = (float)ui8_cruiseThrottleSetting;
+                    ui16_temp = ui8_cruiseThrottleSetting << 8;
 				}
 				else {
 					ui8_cruiseThrottleSetting = 0;
-					float_temp = (float)ui8_momentary_throttle; // or ui16_sum_throttle
+                    ui16_temp = ui8_momentary_throttle << 8;
 				}
 			}
 		} else {
-			
-			float_temp = (float)ui8_momentary_throttle; // or ui16_sum_throttle
+		
+            ui16_temp = ui8_momentary_throttle << 8;
 
 			//float_temp *= (1 - (float) ui16_virtual_erps_speed / 2 / (float) (ui16_speed_kph_to_erps_ratio/100 * ((float) ui8_speedlimit_kph))); //ramp down linear with speed. Risk: Value is getting negative if speed>2*speedlimit
 			// above line wasnt working anyway before, so I commented it out, but it should be fixed with the division by 100
@@ -303,24 +307,32 @@ uint16_t aca_setpoint(uint16_t ui16_time_ticks_between_pas_interrupt, uint16_t s
 
 		// map curret target to assist level, not to maximum value
 		if ((ui8_aca_flags_low & ASSIST_LVL_AFFECTS_THROTTLE) == ASSIST_LVL_AFFECTS_THROTTLE) {
-			float_temp *= ((float) ui8_assist_percent_actual / 100.0);
+            ui16_temp /= 100;
+            ui16_temp *= ui8_assist_percent_actual;
 			controll_state_temp += 8;
 		}
 
-		float_temp = float_temp * (float) (ui16_battery_current_max_value) / 255.0 + (float) ui16_current_cal_b; //calculate current target
+#if BATTERY_CURRENT_MAX_VALUE > 255
+    #error BATTERY_CURRENT_MAX_VALUE cannot be higher than 255 in this version of the code due to optimizations
+#endif
+        if (ui16_temp & 0x00FF > 127) ui16_temp += (1 << 8); // if >= 0.5 round up
+        ui16_temp >>= 8;
+        ui16_temp *= ui16_battery_current_max_value; // at 25A this would be ~250, we error out if BATTERY_CURRENT_MAX_VALUE > 255
+        ui16_temp >>= 8; // decrease precision again, ignore rounding errors
+        ui16_temp += ui16_current_cal_b;
 
 
-		if ((uint32_t) float_temp > uint32_current_target) {
+		if ((uint32_t) ui16_temp > uint32_current_target) {
 			if (((ui8_aca_flags_high & TQ_SENSOR_MODE) == TQ_SENSOR_MODE)) {
 				if (uint32_current_target > ui16_current_cal_b){
 					//override cadence based torque with torquesensor-throttle only if there is cadence based contribution
-					uint32_current_target = (uint32_t) float_temp;
+					uint32_current_target = (uint32_t) ui16_temp;
 					ui8_moving_indication &= ~(16);
 					ui8_moving_indication |= 2;
 				}
 			}else{
 				//override torque simulation with throttle
-				uint32_current_target = (uint32_t) float_temp; 
+				uint32_current_target = (uint32_t) ui16_temp; 
 				ui8_moving_indication &= ~(16);
 				ui8_moving_indication |= 2;
 			}
@@ -330,6 +342,7 @@ uint16_t aca_setpoint(uint16_t ui16_time_ticks_between_pas_interrupt, uint16_t s
 		// check for overspeed
 		uint32_temp = uint32_current_target;
 		uint32_current_target = CheckSpeed((uint16_t) uint32_current_target, (uint16_t) ui16_virtual_erps_speed, (ui16_speed_kph_to_erps_ratio * ((uint16_t) ui8_speedlimit_actual_kph)) / 100, (ui16_speed_kph_to_erps_ratio * ((uint16_t) (ui8_speedlimit_actual_kph + 2))) / 100); //limit speed
+                                                                                                                                                                                                                                                                                      //
 		if (uint32_temp != uint32_current_target) {
 			controll_state_temp += 32;
 		}
@@ -343,11 +356,12 @@ uint16_t aca_setpoint(uint16_t ui16_time_ticks_between_pas_interrupt, uint16_t s
 			uint32_current_target = (PHASE_CURRENT_MAX_VALUE) * setpoint_old / 255 + ui16_current_cal_b;
 			controll_state_temp += 128;
 		}
-		
-			
+
+
 		if ((ui8_aca_experimental_flags_low & DC_STATIC_ZERO) == DC_STATIC_ZERO) {
 			ui32_dutycycle = 0;
 			controll_state_temp += 256;
+            // next took 1.94ms, after opti of mapping 0.26ms
 		} else if (!checkUnderVoltageOverride() && !checkMaxErpsOverride()){
 
 			if (ui8_walk_assist) uint32_current_target = (WALK_ASSIST_CURRENT_TARGET) + ui16_current_cal_b;
@@ -367,7 +381,9 @@ uint16_t aca_setpoint(uint16_t ui16_time_ticks_between_pas_interrupt, uint16_t s
 			}
 
 			//send current target to PI-controller
-			ui32_dutycycle = PI_control(ui16_BatteryCurrent, uint32_current_target,uint_PWM_Enable);
+			/* ui32_dutycycle = PI_control(ui16_BatteryCurrent, uint32_current_target,uint_PWM_Enable); */
+			ui32_dutycycle = PI_control_fixed(ui16_BatteryCurrent, uint32_current_target,uint_PWM_Enable);
+
 		}
 		
 		if ((ui8_aca_experimental_flags_high & PWM_AUTO_OFF) == PWM_AUTO_OFF) {

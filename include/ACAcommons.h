@@ -22,11 +22,13 @@
 
 //uint32_t PI_control(uint16_t pv, uint16_t setpoint, uint8_t uint_PWM_Enable);
 int32_t PI_control(uint16_t pv, uint16_t setpoint, uint8_t uint_PWM_Enable);
+int32_t PI_control_fixed(uint16_t pv, uint16_t setpoint, uint8_t uint_PWM_Enable);
 void PI_control_jump(uint8_t dc);
 uint32_t CheckSpeed(uint16_t current_target, uint16_t speed, uint16_t softLimit, uint16_t hardLimit);
 int32_t map32(int32_t x, int32_t in_min, int32_t in_max, int32_t out_min, int32_t out_max);
 int8_t map8(int16_t x, int16_t in_min, int16_t in_max, int16_t out_min, int16_t out_max);
 uint8_t map8u(uint8_t x, uint8_t in_min, uint8_t in_max, uint8_t out_min, uint8_t out_max);
+uint16_t map16o8i(uint8_t x, uint8_t in_min, uint8_t in_max, uint16_t out_min, uint16_t out_max);
 
 uint8_t float2int(float in, float maxRange);
 float int2float(uint8_t in, float maxRange);

@@ -57,10 +57,10 @@ uint8_t map8u(uint8_t x, uint8_t in_min, uint8_t in_max, uint8_t out_min, uint8_
 		// map the input to the output range.
 		// round up if mapping bigger ranges to smaller ranges
 	else if ((in_max - in_min) > (out_max - out_min))
-		return ((uint16_t)(x - in_min)) * ((uint16_t) (out_max - out_min + 1)) / (((uint16_t)(in_max - in_min + 1)) + (uint16_t)out_min);
+		return ((uint16_t)(x - in_min)) * ((uint16_t) (out_max - out_min + 1)) / ((uint16_t)(in_max - in_min + 1)) + (uint16_t)out_min;
 		// round down if mapping smaller ranges to bigger ranges
 	else
-		return ((uint16_t)(x - in_min)) * ((uint16_t)(out_max - out_min)) / ((uint16_t)(in_max - in_min) + (uint16_t)out_min);
+		return ((uint16_t)(x - in_min)) * ((uint16_t) (out_max - out_min))     / ((uint16_t)(in_max - in_min))     + (uint16_t)out_min;
 }
 
 uint8_t map8ur(uint16_t x, uint8_t in_min, uint8_t in_max, uint8_t out_min, uint8_t out_max) {
@@ -73,10 +73,26 @@ uint8_t map8ur(uint16_t x, uint8_t in_min, uint8_t in_max, uint8_t out_min, uint
 		// map the input to the output range.
 		// round up if mapping bigger ranges to smaller ranges
 	else if ((in_max - in_min) > (out_max - out_min))
-		return ((uint16_t)(x - in_min)) * ((uint16_t) (out_max - out_min + 1)) / (((uint16_t)(in_max - in_min + 1)) + (uint16_t)out_min);
+		return ((uint16_t)(x - in_min)) * ((uint16_t) (out_max - out_min + 1)) / ((uint16_t)(in_max - in_min + 1)) + (uint16_t) out_min;
 		// round down if mapping smaller ranges to bigger ranges
 	else
-		return ((uint16_t)(x - in_min)) * ((uint16_t)(out_max - out_min)) / ((uint16_t)(in_max - in_min) + (uint16_t)out_min);
+		return ((uint16_t)(x - in_min)) * ((uint16_t) (out_max - out_min))     / ((uint16_t)(in_max - in_min))     + (uint16_t) out_min;
+}
+
+uint16_t map16o8i(uint8_t x, uint8_t in_min, uint8_t in_max, uint16_t out_min, uint16_t out_max) {
+	// if input is smaller/bigger than expected return the min/max out ranges value
+	if (x < in_min) 
+		return out_min;
+	else if (x > in_max)
+		return out_max;
+
+		// map the input to the output range.
+		// round up if mapping bigger ranges to smaller ranges
+	else if (((uint16_t)(in_max - in_min)) > (out_max - out_min))
+		return ((uint16_t)(x - in_min)) * ((uint16_t) (out_max - out_min + 1)) / ((uint16_t)(in_max - in_min + 1)) + (uint16_t)out_min;
+		// round down if mapping smaller ranges to bigger ranges
+	else
+		return ((uint16_t)(x - in_min)) * ((uint16_t) (out_max - out_min))     / ((uint16_t)(in_max - in_min))     + (uint16_t)out_min;
 }
 
 int32_t map32(int32_t x, int32_t in_min, int32_t in_max, int32_t out_min, int32_t out_max) {
@@ -94,23 +110,60 @@ int32_t map32(int32_t x, int32_t in_min, int32_t in_max, int32_t out_min, int32_
 	else
 		return (x - in_min) * (out_max - out_min) / (in_max - in_min) + out_min;
 }
-static float float_i;
+
+static int32_t fi, fdc = 0;
+static float float_i, float_dc = 0;
+/* static int32_t fi; */
 
 void PI_control_jump(uint8_t dc) {
        float_i = dc;
+       fi = dc * 256;
+}
+
+int32_t PI_control_fixed(uint16_t pv, uint16_t setpoint, uint8_t uint_PWM_Enable) {
+
+    int32_t fp;
+    static int32_t fi, fdc;
+
+    fp = (((int32_t) ((int32_t)setpoint - (int32_t)pv))) * P_FACTOR_INT;
+    fi += ((((int32_t) ((int32_t) setpoint - (int32_t)pv))) * I_FACTOR_INT);
+
+	if (fi > (65280)) fi = (65280);
+	if (fi < 0) fi = 0;
+
+	if (!uint_PWM_Enable && ((ui8_aca_experimental_flags_high & PWM_AUTO_OFF) == PWM_AUTO_OFF)) {
+        fi = (ui32_erps_filtered * 383) - fp; // mc = 1.5 always
+	}
+
+
+
+    if (fp + fi > fdc + (1280)) {
+        fdc += 1280;
+    } else if (fp + fi < fdc - (1280)) {
+        fdc -= 1280;
+    } else {
+        fdc = fp + fi;
+    }
+
+
+    if (fdc > 65280) fdc = 65280;
+	if (fdc < 0) fdc = 0;
+
+
+	return ((uint8_t) (fdc >> 8));
 }
 
 int32_t PI_control(uint16_t pv, uint16_t setpoint, uint8_t uint_PWM_Enable) {
-//uint32_t PI_control(uint16_t pv, uint16_t setpoint, uint8_t uint_PWM_Enable) {
 	float float_p;
 	static float float_i;
-	static float float_dc = 0;
+	static float float_dc;
+
 	float_p = ((float) setpoint - (float) pv) * flt_s_pid_gain_p;
 	float_i += ((float) setpoint - (float) pv) * flt_s_pid_gain_i;
-	
+
 	if (float_i > 255) float_i = 255;
 	if (float_i < 0) float_i = 0;
-	
+
 	if (!uint_PWM_Enable && ((ui8_aca_experimental_flags_high & PWM_AUTO_OFF) == PWM_AUTO_OFF)) {
 		float_i = ui32_erps_filtered * flt_s_motor_constant - float_p;
 	}

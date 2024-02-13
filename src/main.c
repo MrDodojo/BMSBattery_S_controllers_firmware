@@ -122,6 +122,7 @@ int main(void) {
 
 	watchdog_init(); //init watchdog after enabling interrupt to have fast loop running already
 
+    debug_pin_set();
 #if (SVM_TABLE == SVM)
 	TIM1_SetCompare1(126 << 1);
 	TIM1_SetCompare2(126 << 1);
@@ -133,16 +134,18 @@ int main(void) {
 #endif
 
 	hall_sensors_read_and_action(); // needed to start the motor
-	//printf("Back in Main.c\n");
 
 	for (a = 0; a < NUMBER_OF_PAS_MAGS; a++) {// array init
 		ui16_torque[a] = 0;
 	}
     debug_pin_reset();
 
-#ifdef TT
+#if defined TT
 	ui8_aca_experimental_flags_low |= DC_STATIC_ZERO;// | PWM_AUTO_OFF;
-    ui8_aca_experimental_flags_high &= ~PWM_AUTO_OFF;
+    /* ui8_aca_experimental_flags_high = USE_ALTERNATE_WAVETABLE | USE_ALTERNATE_WAVETABLE_C; */
+    ui8_aca_experimental_flags_low  = 0;
+    /* ui8_aca_flags_high = 0; */
+    /* ui8_aca_flags_low = 0; */
 #endif
 
 #if defined DIAGNOSTICS
@@ -150,6 +153,7 @@ int main(void) {
 	printf("System initialized\r\n");
 
 #endif
+
     uint8_t pts = 0;
 	while (1) {
 		uart_send_if_avail();
@@ -162,6 +166,7 @@ int main(void) {
 #endif
 
 		// scheduled update of setpoint and duty cycle (slow loop, 50 Hz)
+        // slow loop in default operation takes about 1.2ms instead of about 5-6
 		if (ui8_slowloop_flag) {
             
 		    debug_pin_set();
@@ -175,8 +180,9 @@ int main(void) {
 			updateX4();
 #endif
 			updateLight(); // 2us
+                           //
+			ui16_setpoint = (uint16_t) aca_setpoint(ui16_time_ticks_between_pas_interrupt, ui16_setpoint);  // used to b 4000+us, now about 720us
 
-			ui16_setpoint = (uint16_t) aca_setpoint(ui16_time_ticks_between_pas_interrupt, ui16_setpoint); // 1250us
 /* #if DO_CRUISE_CONTROL == 1 */
 /* 			ui16_setpoint = cruise_control(ui16_setpoint); */
 /* #endif */
@@ -228,10 +234,7 @@ int main(void) {
 
         debug_pin_reset();
 		}// end of slow loop
-		 //
-#ifndef TT
-        wfi();
-#endif
+
 #ifdef TT
         pts++;
                if (pts >= 25) {

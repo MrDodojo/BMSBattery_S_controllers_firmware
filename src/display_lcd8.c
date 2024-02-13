@@ -242,6 +242,11 @@ void digestLcdValues(void) {
         update_aca = 1;
 	}
 
+    if (lcd_data.c4 != (((ui8_aca_flags_high) >> 5) & 0x01)) {
+		ui8_aca_flags_high &= ~(ANGLE_CORRECTION_ENABLED);
+        ui8_aca_flags_high |= (lcd_data.c4 & 0x01) << 5;
+        update_aca = 1;
+    }
     
     if (lcd_data.c5 != ((ui8_aca_experimental_flags_low >> 5) & 0x07)) {
 		ui8_aca_experimental_flags_low &= ~(USE_ALTERNATE_WAVETABLE | USE_ALTERNATE_WAVETABLE_B | USE_ALTERNATE_WAVETABLE_C);
@@ -255,6 +260,7 @@ void digestLcdValues(void) {
         ui8_aca_flags_low |= lcd_data.c12 << 4;
         update_aca = 1;
     }
+
     
 
     switch (lcd_data.l1) {

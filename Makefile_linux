@@ -121,6 +121,15 @@ flash:
 erase:
 	stm8flash  -d/dev/ttyACM0 -cstlinkv2 -pstm8s105?6 -w images/zeroes.bin -s flash
 
+erase-eeprom:
+	stm8flash  -d/dev/ttyACM0 -cstlinkv2 -pstm8s105?6 -w images/zeroes.bin -s eeprom
+
+read-eeprom:
+	stm8flash  -d/dev/ttyACM0 -cstlinkv2 -pstm8s105?6 -r eeprom.dump -s eeprom
+
+unlock:
+	stm8flash  -d/dev/ttyACM0 -cstlinkv2 -pstm8s105?6 -u
+
 option:
 	stm8flash  -d/dev/ttyACM0 -cstlinkv2 -pstm8s105?6 -w images/option_bytes_pwm_n_channels_enabled.bin -s opt
 

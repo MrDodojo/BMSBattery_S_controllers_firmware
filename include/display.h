@@ -87,7 +87,7 @@ typedef struct LCD8_display_data_t {
 	union  {
 		uint8_t raw[13];
 		struct {
-			uint8_t 	p5; // B0           // 0-64
+			uint8_t 	p5; // B0           // 0-64                                     //
 			uint8_t 	assist_level : 3;   // 0-5, 6 = cruise
 			uint8_t 	unknown : 4;        
 			uint8_t 	lights : 1; // B1   // 0-1
@@ -104,17 +104,17 @@ typedef struct LCD8_display_data_t {
 			uint8_t 	c2 : 3;             // 0-1, sometimes 0-6 or 0-7                // ASSIST_LVL_AFFECTS_THROTTLE
 			uint8_t		c1 : 3;             // 0-7                                      // OFFROAD_ENABLED | BRAKE_DISABLES_OFFROAD | IDLE_DISABLES_OFFROAD
 			uint8_t 	unkown2 : 2; // B6
-			uint8_t 	c5 : 4;             // 0-10                                     // 0-7 set WAVETABLES
+			uint8_t 	c5 : 4;             // 0-10                                     // 0-7 set wavetables 
 			uint8_t 	unknown4 : 1;
 			uint8_t 	c14 : 2;            // 1-3
 			uint8_t 	unknown3 : 1;// B7
 			uint8_t 	c12 : 5;            // 0-7                                      // DIGITAL_REGEN | SPEED_INFLUENCES_REGEN | SPEED_INFLUENCES_TORQUESENSOR
-			uint8_t 	c4 : 3; // B8       // 0-4, 4 sets c4_percentage
+			uint8_t 	c4 : 3; // B8       // 0-4, 4 sets c4_percentage                //  bit 0 sets ANGLE_CORRECTION_ENABLED
 			uint8_t 	B9; // B9
             uint8_t     l3 : 1;             // 0-1                                      // DYNAMIC_ASSIST_LEVEL
 			uint8_t 	unknown6 : 1;
 			uint8_t 	c13 : 3;            // 0-5
-			uint8_t 	c15 : 2;            // 0-2 (4-6)
+			uint8_t 	c15 : 2;            // 0-2 (4-6)                                
 			uint8_t 	unknown5 : 1; // B10
 			uint8_t 	c4_percentage : 6;  // 0-40 (20-40)
 			uint8_t 	l1 : 2; // B11      // 0-3                                      // 0 = THROTTLE_WALK, 1 = THROTTLE_REGEN, 2 = THROTTLE_UNLIMITED, 3 = THROTTLE_UNLIMITED | THROTTLE_REGEN

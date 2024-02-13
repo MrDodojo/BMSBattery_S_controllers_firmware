@@ -20,17 +20,8 @@
 // Brake signal
 void EXTI_PORTA_IRQHandler(void) __interrupt(EXTI_PORTA_IRQHANDLER)
 {
-  if (brake_is_set())
-  {
-    //brake_coast_enable ();
-    //stop_cruise_control ();
-  }
-  else
-  {
-    //brake_coast_disable ();
-    //pwm_set_duty_cycle (0);
-    //stop_cruise_control ();
-  }
+    // original code did nothing except kill the mcu when brake was enabled at startup (will never retire)
+    return;
 }
 
 void brake_init (void)
@@ -38,11 +29,17 @@ void brake_init (void)
   //hall sensors pins as external input pin interrupt
   GPIO_Init(BRAKE__PORT,
 	    BRAKE__PIN,
-	    GPIO_MODE_IN_FL_IT); // with external interrupt
+#ifdef BRAKE_NO_INTERRUPT
+        GPIO_MODE_IN_FL_NO_IT
+#else
+	    GPIO_MODE_IN_FL_IT // with external interrupt
+#endif
+        );
 
   //initialize the Interrupt sensitivity
-  EXTI_SetExtIntSensitivity(EXTI_PORT_GPIOA,
-			    EXTI_SENSITIVITY_RISE_FALL);
+#ifndef BRAKE_NO_INTERRUPT
+  EXTI_SetExtIntSensitivity(EXTI_PORT_GPIOA, EXTI_SENSITIVITY_RISE_FALL);
+#endif
 }
 
 BitStatus brake_is_set (void)

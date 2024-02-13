@@ -20,11 +20,11 @@
 #define ADC_BATTERY_VOLTAGE_K 70
 #define BATTERY_VOLTAGE_MIN_VALUE 77L
 #define BATTERY_VOLTAGE_MAX_VALUE 107L
-#define BATTERY_CURRENT_MAX_VALUE 45L
+#define BATTERY_CURRENT_MAX_VALUE 67L
 #define BATTERY_CHARGING_VS_FULL_OFFSET 0
 #define PHASE_CURRENT_MAX_VALUE 135L
-#define REGEN_CURRENT_MAX_VALUE 23L
-#define current_cal_a 95
+#define REGEN_CURRENT_MAX_VALUE 45L
+#define current_cal_a 39 
 #define LEVEL_1 12
 #define LEVEL_2 21
 #define LEVEL_3 30
@@ -34,6 +34,8 @@
 #define MORSE_TIME_2 50
 #define MORSE_TIME_3 50
 #define RAMP_END 1500
+#define P_FACTOR_INT 128 // 0.5 we use 24.8 precision
+#define I_FACTOR_INT 52 // 0.2 we use 24.8 precision
 #define P_FACTOR 0.5
 #define I_FACTOR 0.2
 #define GEAR_RATIO 12L
@@ -48,6 +50,8 @@
 #define WALK_ASSIST_SPEED_LIMIT 6
 #define WALK_ASSIST_CURRENT_TARGET 5
 
+#define BRAKE_NO_INTERRUPT // enable if your brake sensor which kills the mcu  at boot (e.g. nothing hapens)
+//
 // #define ANGLE_4_0 1
 // #define ANGLE_6_60 32
 // #define ANGLE_2_120 84
@@ -61,10 +65,11 @@
 #define ANGLE_3_180 128
 #define ANGLE_1_240 171
 #define ANGLE_5_300 213
-#define MOTOR_ROTOR_DELTA_PHASE_ANGLE_RIGHT 236
+#define MOTOR_ROTOR_DELTA_PHASE_ANGLE_RIGHT 225
 
 #define X4_TEMPERATURE
 #define X4_TEMP_CAL_OFFSET 5
+#define PMSM
 
 #define USE_FIELD_WEAKENING
 #define SWAP_PHASES 2

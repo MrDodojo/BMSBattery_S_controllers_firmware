@@ -39,8 +39,14 @@ This firmware replaces the closed source one on Kunteng sine wave controllers. I
     * Kunteng LCD3 / LCD5 (C/P parameters mapped differently)
     * BluOsec App as Display / as Trip monitor / for on the fly configuration  
     * Kingmeter J-LCD and Forerider App (not tested for a long time now)
-    * (!New) Kunteng LCD8 with cleaner display code
-* (!New) UART communication with a python script to determine hall angles and motor delta angle, the last one will get you in the ballpark.
+    * (Added) Kunteng LCD8 with cleaner display code
+
+Other improvements:
+* (Modified) Modified almost all float code to either use 16bit or 32bit fixed point math. Slow loop now is less slow.
+* (Modified) PMSM modification for angle correction, since you need a lot more lead to get it running and do not want lagging correction.
+* (Added) UART communication with a python script to determine hall angles and motor delta angle, will only get you in the ballpark, under development
+* (Removed) Interupt for brake signals. It wuold trigger so much in the bouncing region of my sensors it would kill any operation in place. It also wasn't used ...
+* (Modified) angle correction now runs on every frame instead of just the 0 frames to aid in startup and smooth running.
 
 ### What doesn't
 
@@ -55,6 +61,12 @@ This firmware replaces the closed source one on Kunteng sine wave controllers. I
 * P4 (0/1) sets PAS_INVERTED option
 * C1 (0-7) bit 2 sets IDLE_DISABLES_OFFROAD, bit 1 sets BRAKE_DISABLES_OFFROAD, bit 0 sets OFFROAD_ENABLED, set to 7 for all and 0 for off
 * C2 (0/1) sets ASSIST_LVL_AFFECTS_THROTTLE
+- C5 (0-7) sets ALTERNATE_WAVETABLE settings, see code or leave at 0
+- C12 (0-7) bit 2 sets SPEED_INFLUENCES_TORQUE_SENSOR, bit 1 sets SPEED_INFLUENCES_REGEN, bit 0 sets DIGITAL_REGEN
+- C15 (0/1) sets ANGLE_CORRECTION_ENABLED
+- L1 (0/1/2/3) New custom throttle settings, disable for legal use in EU (only allowed for walk), 1 sets throttle as regen, 2 sets unrestricted and 3 sets unrestricted and regen
+- L2 (0/1) sets AVOID_MOTOR_CYCLES_JITTER
+- L3 (0/1) sets DYNAMIC_ASSIST_LEVEL
 
 ## For further reading
 
