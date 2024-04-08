@@ -18,11 +18,16 @@ PLATFORM = stm8
 PNAME = main
 
 #Directory for helpers
-IDIR = StdPeriphLib/inc
-SDIR = StdPeriphLib/src
+IDIR = lib/inc
+SDIR = lib/src
+
+#.c files in src
+SRC = src
+#.h files in include/
+INC = include
 
 # In case you ever want a different name for the main source file
-MAINSRC = $(PNAME).c
+MAINSRC = $(SRC)/$(PNAME).c
 
 ELF_SECTIONS_TO_REMOVE = -R DATA -R INITIALIZED -R SSEG -R .debug_line -R .debug_loc -R .debug_abbrev -R .debug_info -R .debug_pubnames -R .debug_frame
 
@@ -38,42 +43,62 @@ EXTRASRCS = \
 	$(SDIR)/stm8s_tim2.c \
 	$(SDIR)/stm8s_adc1.c \
 	$(SDIR)/stm8s_flash.c \
-	BOdisplay.c \
-	ACAcontrollerState.c \
-	ACAeeprom.c \
-	ACAsetPoint.c \
-	ACAcommons.c \
-	gpio.c \
-	cruise_control.c \
-	uart.c \
-	adc.c \
-	brake.c \
-	timers.c \
-	pwm.c \
-	motor.c \
-	PAS.c \
-	SPEED.c \
-	display.c \
-	display_kingmeter.c
+	$(SRC)/BOdisplay.c \
+	$(SRC)/ACAcontrollerState.c \
+	$(SRC)/ACAeeprom.c \
+	$(SRC)/ACAsetPoint.c \
+	$(SRC)/ACAcommons.c \
+	$(SRC)/gpio.c \
+	$(SRC)/cruise_control.c \
+	$(SRC)/uart.c \
+	$(SRC)/adc.c \
+	$(SRC)/brake.c \
+	$(SRC)/timers.c \
+	$(SRC)/pwm.c \
+	$(SRC)/motor.c \
+	$(SRC)/PAS.c \
+	$(SRC)/SPEED.c \
+	$(SRC)/display.c \
+	$(SRC)/display_lcd8.c \
+	$(SRC)/display_kingmeter.c
 
-HEADERS = BOdisplay.h ACAcommons.h ACAsetPoint.h ACAcontrollerState.h ACAeeprom.h adc.h  brake.h  cruise_control.h  gpio.h  interrupts.h  main.h  motor.h  pwm.h  timers.h  uart.h  PAS.h  SPEED.h  
+HEADERS = \
+	$(INC)/BOdisplay.h \
+	$(INC)/ACAcommons.h \
+	$(INC)/ACAsetPoint.h \
+	$(INC)/ACAcontrollerState.h \
+	$(INC)/ACAeeprom.h \
+	$(INC)/adc.h \
+	$(INC)/brake.h \
+	$(INC)/cruise_control.h \
+	$(INC)/gpio.h \
+	$(INC)/interrupts.h \
+	$(INC)/main.h \
+	$(INC)/motor.h \
+	$(INC)/pwm.h \
+	$(INC)/timers.h \
+	$(INC)/uart.h \
+	$(INC)/PAS.h \
+	$(INC)/SPEED.h \
 
 # The list of .rel files can be derived from the list of their source files
 RELS = $(EXTRASRCS:.c=.rel)
 
-INCLUDES = -I$(IDIR) -I. 
-CFLAGS   = -m$(PLATFORM) --std-c99 --nolospre
-ELF_FLAGS = --out-fmt-ihx --debug
-LIBS     = 
+INCLUDES = -I$(IDIR) -I$(INC) 
+CFLAGS   = -m$(PLATFORM) --std-c99
+#--nolospre
+ELF_FLAGS = --out-fmt-ihx
+#--debug
+LIBS     =
+ 
 # This just provides the conventional target name "all"; it is optional
 # Note: I assume you set PNAME via some means not exhibited in your original file
 all: $(PNAME)
 
 # How to build the overall program
-
 $(PNAME): $(MAINSRC) $(RELS)
 	$(CC) $(INCLUDES) $(CFLAGS) $(ELF_FLAGS) $(LIBS) $(MAINSRC) $(RELS)
-# $(SIZE) $(PNAME).elf
+#	$(SIZE) $(PNAME).elf
 # $(OBJCOPY) -O binary $(ELF_SECTIONS_TO_REMOVE) 
 # $(PNAME).elf $(PNAME).bin
 
@@ -87,8 +112,8 @@ $(PNAME): $(MAINSRC) $(RELS)
 .SUFFIXES: .c .rel
 
 # hex:
-#	$(OBJCOPY) -O ihex $(ELF_SECTIONS_TO_REMOVE) $(PNAME).elf 
-# $(PNAME).ihx
+#$(OBJCOPY) -O ihex $(ELF_SECTIONS_TO_REMOVE) $(PNAME).elf 
+#$(PNAME).ihx
 
 # flash:
 #	stm8flash -cstlinkv2 -pstm8s105?6 -w$(PNAME).ihx
